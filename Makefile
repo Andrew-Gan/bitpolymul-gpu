@@ -73,5 +73,8 @@ tests:
 tables:
 	cd supplement; make
 
+submit:
+	sbatch -n 16 -N 1 --gpus-per-node=1 run_test.sh
+
 clean:
 	rm *.o *-test *-benchmark

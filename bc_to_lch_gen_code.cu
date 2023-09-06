@@ -17,6 +17,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdio.h>
+
 void bc_to_lch_256_30_12(__m256i* poly, int logn){
 for(int offset=(1<<30);offset<(1<<logn);offset+=(1<<(30+1))){
 for(int i=offset+(1<<30)-1-805306368;i>=offset+(1<<30)-1006632960;--i)poly[i]^=poly[i+805306368];
@@ -271,30 +273,66 @@ for(int i=offset-1-524286;i>=offset-524287;--i)poly[i]^=poly[i+524287];
 
 }
 }
+
+typedef struct u256 {
+private:
+    data[4];
+public:
+    __device__ u256& operator^(u256 &rhs) {
+        for (int i = 0; i < 4; i++) {
+            data[i] ^= rhs.data[i];
+        }
+    }
+};
+
+__global__ static
+void xor_gpu(u256* poly, int base, int offs) {
+    int i = base + blockIdx.x * blockDim.x + threadIdx.x;
+    poly[i] ^= poly[i+offs];
+}
+
+__global__ static
+void xor_gpu(u256* poly, int base, int offs1, int offs2) {
+    int i = base + blockIdx.x * blockDim.x + threadIdx.x;
+    poly[i] ^= poly[i+offs1] ^ poly[i+offs2];
+}
+
+__global__ static
+void xor_gpu(u256* poly, int base, int offs1, int offs2, int offs3) {
+    int i = base + blockIdx.x * blockDim.x + threadIdx.x;
+    poly[i] ^= poly[i+offs1] ^ poly[i+offs2] ^ poly[i+offs3];
+}
+
 static
 void bc_to_lch_256_19_17(__m256i* poly, int logn){
 for(int offset=(1<<18);offset<(1<<logn);offset+=(1<<(18+1))){
-for(int i=offset+(1<<18)-1-196608;i>=offset+(1<<18)-262140;--i)poly[i]^=poly[i+196608];
-for(int i=offset+(1<<18)-1-262140;i>=offset+(1<<18)-262143;--i)poly[i]^=poly[i+196608]^poly[i+262140];
-for(int i=offset+(1<<18)-1-262143;i>=offset+(1<<18)-262144;--i)poly[i]^=poly[i+196608]^poly[i+262140]^poly[i+262143];
-for(int i=offset-1-0;i>=offset-196608;--i)poly[i]^=poly[i+196608]^poly[i+262140]^poly[i+262143];
-for(int i=offset-1-196608;i>=offset-262140;--i)poly[i]^=poly[i+262140]^poly[i+262143];
-for(int i=offset-1-262140;i>=offset-262143;--i)poly[i]^=poly[i+262143];
-
+    xor_gpu<<<64, 1024>>>(poly, offset+(1<<18)-262140, 196608);
+    // for(int i=offset+(1<<18)-1-196608;i>=offset+(1<<18)-262140;--i)poly[i]^=poly[i+196608];
+    xor_gpu<<<1, 3>>>(poly, offset+(1<<18)-262143, 196608, 262140);
+    // for(int i=offset+(1<<18)-1-262140;i>=offset+(1<<18)-262143;--i)poly[i]^=poly[i+196608]^poly[i+262140];
+    xor_gpu<<<1, 1>>>(poly, offset+(1<<18)-262144, 196608, 262140, 262143);
+    // for(int i=offset+(1<<18)-1-262143;i>=offset+(1<<18)-262144;--i)poly[i]^=poly[i+196608]^poly[i+262140]^poly[i+262143];
+    xor_gpu<<<192, 1024>>>(poly, offset-196608, 196608, 262140, 262143);
+    // for(int i=offset-1-0;i>=offset-196608;--i)poly[i]^=poly[i+196608]^poly[i+262140]^poly[i+262143];
+    xor_gpu<<<64, 1024>>>(poly, offset-262140, 262140, 262143);
+    // for(int i=offset-1-196608;i>=offset-262140;--i)poly[i]^=poly[i+262140]^poly[i+262143];
+    xor_gpu<<<1, 3>>>(poly, offset-262143, 262143);
+    // for(int i=offset-1-262140;i>=offset-262143;--i)poly[i]^=poly[i+262143];
 }
+
 for(int offset=(1<<17);offset<(1<<logn);offset+=(1<<(17+1))){
 for(int i=offset+(1<<17)-1-65536;i>=offset+(1<<17)-131070;--i)poly[i]^=poly[i+65536];
 for(int i=offset+(1<<17)-1-131070;i>=offset+(1<<17)-131071;--i)poly[i]^=poly[i+65536]^poly[i+131070];
 for(int i=offset+(1<<17)-1-131071;i>=offset+(1<<17)-131072;--i)poly[i]^=poly[i+65536]^poly[i+131070]^poly[i+131071];
+
 for(int i=offset-1-0;i>=offset-65536;--i)poly[i]^=poly[i+65536]^poly[i+131070]^poly[i+131071];
 for(int i=offset-1-65536;i>=offset-131070;--i)poly[i]^=poly[i+131070]^poly[i+131071];
 for(int i=offset-1-131070;i>=offset-131071;--i)poly[i]^=poly[i+131071];
-
 }
+
 for(int offset=(1<<16);offset<(1<<logn);offset+=(1<<(16+1))){
 for(int i=offset+(1<<16)-1-65535;i>=offset+(1<<16)-65536;--i)poly[i]^=poly[i+65535];
 for(int i=offset-1-0;i>=offset-65535;--i)poly[i]^=poly[i+65535];
-
 }
 }
 static
