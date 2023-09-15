@@ -19,7 +19,8 @@ along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "bc.h"
 
-
+#include "cuda.h"
+#include "cuda_runtime.h"
 
 #define BC_CODE_GEN
 
@@ -65,7 +66,7 @@ unsigned get_max_si( unsigned deg ) {
 #include <immintrin.h>
 
 #include "bc_to_mono_gen_code.c"
-#include "bc_to_lch_gen_code.c"
+#include "bc_to_lch_gen_code.cu"
 
 
 #define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
@@ -831,7 +832,7 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	unsigned n_256 = n_terms>>2;
 
 	u256 *poly256_d;
-	cudaMalloc(poly256_d, n_terms / 4 * sizeof(*poly256_d));
+	cudaMalloc(&poly256_d, n_terms / 4 * sizeof(*poly256_d));
 
 	varsub_x256( poly256 , n_256 );
 #ifdef BC_CODE_GEN
@@ -844,11 +845,15 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
             bc_to_lch_256_19_17(poly256_d+i*(1<<19),MIN(19,logn));
         }
         for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
-	    bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));
+	    bc_to_lch_256_16(poly256_d+i*(1<<16), MIN(16,logn));
         }
+
+		cudaMemcpy(poly256, poly256_d, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyDeviceToHost);
 #else
 	_bc_to_lch_256( poly256 , n_256 , 1 );
 #endif
+
+	cudaFree(poly256_d);
 }
 
 

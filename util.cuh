@@ -1,21 +1,24 @@
-#include <initializer_list>
+#include <stdarg.h>
+#include "cuda.h"
+#include "cuda_runtime.h"
 
-typedef struct u256 {
+typedef struct _u256 {
 private:
-    data[4];
+    uint64_t data[4];
 public:
-    __device__ u256& operator^(u256 &rhs) {
+    __device__ _u256& operator^=(_u256 &rhs) {
         for (int i = 0; i < 4; i++) {
             data[i] ^= rhs.data[i];
         }
     }
-};
+} u256;
 
-__global__ static
-void xor_gpu(u256* poly, int base, std::initializer_list<int> offs) {
+template <typename... Arguments>
+__global__
+void xor_gpu(u256* poly, int base, Arguments... offsets) {
     int i = base + blockIdx.x * blockDim.x + threadIdx.x;
-    for (auto off : offs) {
-        poly[i] ^= poly[i + off];
+    for (const int offset : {offsets...}) {
+        poly[i] ^= poly[i + offset];
     }
 }
 
