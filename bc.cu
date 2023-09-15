@@ -830,12 +830,18 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	__m256i * poly256 = (__m256i*) poly;
 	unsigned n_256 = n_terms>>2;
 
+	u256 *poly256_d;
+	cudaMalloc(poly256_d, n_terms / 4 * sizeof(*poly256_d));
+
 	varsub_x256( poly256 , n_256 );
 #ifdef BC_CODE_GEN
         int logn = LOG2(n_256);
         bc_to_lch_256_30_12(poly256,logn);
+
+		cudaMemcpy(poly256_d, poly256, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyHostToDevice);
+
         for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
-            bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
+            bc_to_lch_256_19_17(poly256_d+i*(1<<19),MIN(19,logn));
         }
         for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
 	    bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));

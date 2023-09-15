@@ -31,6 +31,8 @@ extern  "C" {
 
 extern uint64_t gfCantorto264[];
 
+__global__
+
 extern uint64_t gfCantorto264_8R[];
 
 
