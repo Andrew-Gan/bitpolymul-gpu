@@ -22,6 +22,8 @@ along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 #include "cuda.h"
 #include "cuda_runtime.h"
 
+#include <stdio.h>
+
 #define BC_CODE_GEN
 
 static inline
@@ -461,6 +463,21 @@ void __xor_down_256( __m256i * poly , unsigned dest_idx , unsigned src_idx , uns
 	}
 }
 
+// Beispiel:
+// __xor_down_256_d<<<1, src_idx - dest_idx>>>(...);
+__global__
+void __xor_down_256_d( u256 * poly , unsigned dest_idx , unsigned src_idx, unsigned len )
+{
+	uint64_t i = blockIdx.x * blockDim.x + threadIdx.x;
+	uint64_t pSize = gridDim.x * blockDim.x;
+
+	if (i >= src_idx - dest_idx) return;
+
+	for (uint64_t d = (dest_idx+len-pSize-1), s = (src_idx+len-pSize-1); d >= dest_idx && s >= src_idx; d -= pSize, s -= pSize) {
+		poly[d+i] ^= poly[s+i];
+	}
+}
+
 static inline
 void __xor_up_256( __m256i * poly , unsigned dest_idx , unsigned src_idx , unsigned len )
 {
@@ -483,7 +500,9 @@ void xor_down_256( __m256i * poly , unsigned st , unsigned len , unsigned diff )
 
 static inline
 void __xor_down_256_2( __m256i * poly , unsigned len , unsigned l_st ){
-	__xor_down_256( poly , l_st , len , len );
+	uint64_t nBlock = (len - l_st + 1023) / 1024;
+	__xor_down_256_d<<<nBlock, 1024>>>(poly, l_st, len, len);
+	// __xor_down_256( poly , l_st , len , len );
 //	for( int i=len-1;i>=0;i--) poly[l_st+i] ^= poly[len+i];
 }
 
@@ -768,13 +787,16 @@ void varsub_x256( __m256i* poly256 , unsigned n_256 )
 {
 	if( 1 >= n_256 ) return;
 	unsigned log_n = __builtin_ctz( n_256 );
+	u256 *zero_d;
 	__m256i zero = _mm256_setzero_si256();
+	cudaMalloc(&zero_d, sizeof(*zero_d));
+	cudaMemset(zero_d, 0, sizeof(*zero_d));
 
 	while( log_n > 8 ) {
 		unsigned unit = 1<<log_n;
 		unsigned num = n_256/unit;
 		unsigned unit_2 = unit>>1;
-		for(unsigned j=0;j<num;j++) __xor_down_256_2( poly256+j*unit , unit_2 , (1<<(log_n-9)) );
+		for(unsigned j=0;j<num;j++) for(unsigned j=0;j<num;j++) __xor_down_256_2( poly256+j*unit , unit_2 , (1<<(log_n-9)) );
 		log_n--;
 	}
 
@@ -783,7 +805,6 @@ void varsub_x256( __m256i* poly256 , unsigned n_256 )
 		unsigned num = n_256 / unit;
 		for(unsigned j=0;j<num;j++) __sh_xor_down( poly256 + j*unit , unit , i-1 , zero );
 	}
-
 }
 
 
@@ -835,24 +856,25 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	cudaMalloc(&poly256_d, n_terms / 4 * sizeof(*poly256_d));
 
 	varsub_x256( poly256 , n_256 );
+
+	cudaMemcpy(poly256_d, poly256, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyHostToDevice);
+
 #ifdef BC_CODE_GEN
         int logn = LOG2(n_256);
-        bc_to_lch_256_30_12(poly256,logn);
-
-		cudaMemcpy(poly256_d, poly256, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyHostToDevice);
+        bc_to_lch_256_30_12(poly256_d,logn);
 
         for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
             bc_to_lch_256_19_17(poly256_d+i*(1<<19),MIN(19,logn));
         }
         for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
-	    bc_to_lch_256_16(poly256_d+i*(1<<16), MIN(16,logn));
+	    	bc_to_lch_256_16(poly256_d+i*(1<<16), MIN(16,logn));
         }
 
-		cudaMemcpy(poly256, poly256_d, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyDeviceToHost);
 #else
 	_bc_to_lch_256( poly256 , n_256 , 1 );
 #endif
 
+	cudaMemcpy(poly256, poly256_d, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyDeviceToHost);
 	cudaFree(poly256_d);
 }
 

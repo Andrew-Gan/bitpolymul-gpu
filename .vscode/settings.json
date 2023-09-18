@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "bc_to_mono_gen_code.c": "cpp"
+        "bc_to_mono_gen_code.c": "cpp",
+        "chrono": "cpp",
+        "cmath": "cpp"
     }
 }
