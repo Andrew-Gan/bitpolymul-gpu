@@ -11,6 +11,25 @@ public:
             data[i] ^= rhs.data[i];
         }
     }
+
+    __device__ _u256& operator>>(int n) {
+        if (n <= 0) return;
+        if (n >= 256) memset(data, 0, 4 * sizeof(*data));
+
+        int offs = 0;
+
+        if (n > 64) offs++;
+        if (n > 128) offs++;
+
+        uint64_t buffer;
+
+        for (int i = 0; i < 4; i++) {
+            buffer = 0;
+            if (i+offs < 4) buffer |= data[i+offs] >> n;
+            if (i+offs+1 < 4) buffer |= data[i+offs+1] << (64-n);
+            data[i] = buffer;
+        }
+    }
 } u256;
 
 template <typename... Arguments>
