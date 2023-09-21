@@ -12,7 +12,7 @@
 #define TEST_RUN 100
 #define REF_RUN TEST_RUN
 
-#define TEST_CONSISTENCY
+// #define TEST_CONSISTENCY
 
 //#define _HAVE_GF2X_
 

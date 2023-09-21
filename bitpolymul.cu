@@ -195,18 +195,19 @@ void bitpolymul_2_128( uint64_t * c , const uint64_t * a , const uint64_t * b , 
 #ifdef _PROFILE_
 bm_start(&bm_bc);
 #endif
+
 	// memcpy( a_bc , a , sizeof(uint64_t)*_n_64 );
 	cudaMemcpy(a_bc_d, a, sizeof(uint64_t)*n_64, cudaMemcpyHostToDevice);
-	for(unsigned i=_n_64;i<n_64;i++) a_bc[i] = 0;
+	for(unsigned i=_n_64;i<n_64;i++) a_bc_d[i] = 0;
 	//bc_to_lch_2( a_bc , n_64 );
-	bc_to_lch_2_unit256( a_bc , n_64 );
+	bc_to_lch_2_unit256( a_bc_d , n_64 );
 		//for(unsigned i=n_64;i<n_64*2;i++) a_bc[i] = 0;
 
 	// memcpy( b_bc , b , sizeof(uint64_t)*_n_64 );
 	cudaMemcpy(b_bc_d, b, sizeof(uint64_t)*n_64, cudaMemcpyHostToDevice);
-	for(unsigned i=_n_64;i<n_64;i++) b_bc[i] = 0;
+	for(unsigned i=_n_64;i<n_64;i++) b_bc_d[i] = 0;
 	//bc_to_lch_2( b_bc , n_64 );
-	bc_to_lch_2_unit256( b_bc , n_64 );
+	bc_to_lch_2_unit256( b_bc_d , n_64 );
 		//for(unsigned i=n_64;i<n_64*2;i++) b_bc[i] = 0;
 
 #ifdef _PROFILE_
