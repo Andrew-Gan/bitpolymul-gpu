@@ -19,7 +19,7 @@ along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "util.cuh"
 
-void bc_to_lch_256_30_12(u256* poly, int logn){
+void bc_to_lch_256_30_12(u256* poly, int logn) {
     for(int offset=(1<<30);offset<(1<<logn);offset+=(1<<(30+1))){
         xor_gpu<<<196608, 1024>>>(poly, offset+(1<<30)-1006632960, 805306368);
         // for(int i=offset+(1<<30)-1-805306368;i>=offset+(1<<30)-1006632960;--i)poly[i]^=poly[i+805306368];

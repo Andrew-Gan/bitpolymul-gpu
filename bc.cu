@@ -19,10 +19,9 @@ along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "bc.h"
 
-#include "cuda.h"
-#include "cuda_runtime.h"
-
 #include <stdio.h>
+
+#include "util.cuh"
 
 #define BC_CODE_GEN
 
@@ -480,12 +479,10 @@ void bc_to_mono_128( bc_sto_t * poly , unsigned n_terms )
 __global__
 void __xor_down_256( u256 * poly , unsigned dest_idx , unsigned src_idx, unsigned len, unsigned unit ) {
 	uint64_t i = blockIdx.x * blockDim.x + threadIdx.x;
-	uint64_t j = blockIdx.y;
 	uint64_t pSize = gridDim.x * blockDim.x;
 
 	if (i >= src_idx - dest_idx) return;
-
-	poly += j * unit;
+	poly += blockIdx.y * unit;
 
 	for (uint64_t d = (dest_idx+len-pSize-1), s = (src_idx+len-pSize-1); d >= dest_idx && s >= src_idx; d -= pSize, s -= pSize) {
 		poly[d+i] ^= poly[s+i];
@@ -514,11 +511,12 @@ void __xor_down_256_2( u256 * poly , unsigned len , unsigned l_st, unsigned num,
 // Beispiel:
 // __xor_up_256<<<1, src_idx - dest_idx>>>(...);
 __global__
-void __xor_up_256( u256 * poly , unsigned dest_idx , unsigned src_idx , unsigned len ) {
+void __xor_up_256( u256 * poly , unsigned dest_idx , unsigned src_idx , unsigned len, unsigned unit ) {
 	uint64_t i = blockIdx.x * blockDim.x + threadIdx.x;
 	uint64_t pSize = gridDim.x * blockDim.x;
 
 	if (i >= src_idx - dest_idx) return;
+	poly += blockIdx.y * unit;
 
 	for (uint64_t d = dest_idx, s = src_idx; d < (dest_idx+len-pSize) && s < (src_idx+len-pSize); d += pSize, s += pSize) {
 		poly[d+i] ^= poly[s+i];
@@ -529,16 +527,16 @@ static inline
 void xor_up_256( u256 * poly , unsigned st , unsigned len , unsigned diff )
 {
 	uint64_t nBlock = (diff + 1023) / 1024;
-	__xor_up_256<<<nBlock, 1024>>>( poly , st , st + diff, len );
+	__xor_up_256<<<nBlock, 1024>>>( poly , st , st + diff, len, 1 );
 //	for( unsigned i=0;i<len;i++) {
 //		poly[st+i] ^= poly[st+i+diff];
 //	}
 }
 
 static inline
-void __xor_up_256_2( u256 * poly , unsigned len , unsigned l_st ){
-	uint64_t nBlock = (len - l_st + 1023) / 1024;
-	__xor_up_256<<<nBlock, 1024>>>(poly, l_st, len, len);
+void __xor_up_256_2( u256 * poly , unsigned len , unsigned l_st, unsigned num, unsigned unit ){
+	dim3 nBlock((len - l_st + 1023) / 1024, num);
+	__xor_up_256<<<nBlock, 1024>>>(poly, l_st, len, len, unit);
 //	for( unsigned i=0;i<len;i++) poly[l_st+i] ^= poly[len+i];
 }
 
@@ -755,7 +753,7 @@ u256 _mm256_alignr_254bit( u256 high , u256 low )
 	u256 r = h_shl_2 ^ h_shr_14.slli<uint8_t>(2);
 
 	u256 r_2 = l_shr_14.permute2x128(h_shr_14 , 0x21);
-	r ^= r_2.srli(14);
+	r ^= r_2.srli<uint8_t>(14);
 	return r;
 }
 
@@ -840,94 +838,110 @@ u256 (*_sh_op_zerohigh[8]) (u256 h, u256 l) = {
 	_mm256_alignr_255bit_zerohigh , _mm256_alignr_254bit_zerohigh , _mm256_alignr_252bit_zerohigh , _mm256_alignr_31byte, _mm256_alignr_30byte, _mm256_alignr_28byte, _mm256_alignr_24byte, _mm256_alignr_16byte
 };
 
-__global__ __sh_xor_down_a(u256 poly256, unsigned unit, unsigned _op, u256 zero) {
-	poly256 += blockIdx.x * unit;
+__global__
+void __sh_xor_down_a(u256 *poly256, unsigned unit, unsigned _op, u256 zero) {
+	poly256 += (blockIdx.x * blockDim.x + threadIdx.x) * unit;
 	poly256[(unit>>1)] ^= _sh_op_zerohigh[_op](zero,poly256[unit-1]);
 }
 
-__global__ __sh_xor_down_b(u256 poly256, unsigned unit, unsigned _op) {
-	uint64_t i = blockIdx.y * blockDim.y + threadIdx.y;
-	poly256 += blockIdx.x * unit;
+__global__
+void __sh_xor_down_b(u256 *poly256, unsigned unit, unsigned _op) {
+	uint64_t i = blockIdx.y;
+	poly256 += (blockIdx.x * blockDim.x + threadIdx.x) * unit;
 	poly256[(unit>>1)-1-i] ^= _sh_op[_op]( poly256[unit-1-i] , poly256[unit-2-i] );
 }
 
-__global__ __sh_xor_down_c(u256 poly256, unsigned unit_2, unsigned _op, u256 zero) {
-	poly256 += blockIdx.x * unit;
-	poly256[0] ^= _sh_op[_op](poly256[unit_2],zero);
+__global__
+void __sh_xor_down_c(u256 *poly256, unsigned unit, unsigned _op, u256 zero) {
+	poly256 += (blockIdx.x * blockDim.x + threadIdx.x) * unit;
+	poly256[0] ^= _sh_op[_op](poly256[unit>>1],zero);
 }
 
-static
+static inline
 void __sh_xor_down( u256* poly256 , unsigned unit , unsigned _op , u256 zero, unsigned num )
 {
-	__sh_xor_down_a<<<(num + 1023) / 1024, 1024>>>(poly256, unit, _op, zero);
+	__sh_xor_down_a<<<(num+1023)/1024, 1024>>>(poly256, unit, _op, zero);
 
-	unsigned unit_2 = unit>>1;
-
-	dim3 nBlock((num + 1023) / 1024, unit_2-1);
+	dim3 nBlock((num+1023)/1024, (unit>>1)-1);
 	__sh_xor_down_b<<<nBlock, 1024>>>(poly256, unit, _op);
 
-	__sh_xor_down_c<<<(num + 1023) / 1024, 1024>>>(poly256, unit_2, _op, zero);
+	__sh_xor_down_c<<<(num+1023)/1024, 1024>>>(poly256, unit, _op, zero);
 }
 
 
 static
-void varsub_x256( u256* poly256_d , unsigned n_256 )
+void varsub_x256( u256* poly256 , unsigned n_256 )
 {
 	if( 1 >= n_256 ) return;
 	unsigned log_n = __builtin_ctz( n_256 );
-	u256 *zero_d;
-	__m256i zero = _mm256_setzero_si256();
-	cudaMalloc(&zero_d, sizeof(*zero_d));
-	cudaMemset(zero_d, 0, sizeof(*zero_d));
+	u256 zero;
+	// __m256i zero = _mm256_setzero_si256();
 
 	while( log_n > 8 ) {
 		unsigned unit = 1<<log_n;
 		unsigned num = n_256/unit;
 		unsigned unit_2 = unit>>1;
-		__xor_down_256_2( poly256_d , unit_2 , (1<<(log_n-9)), num, unit );
+		__xor_down_256_2( poly256 , unit_2 , (1<<(log_n-9)), num, unit );
 		log_n--;
 	}
 
 	for(unsigned i=log_n; i>0 ; i--) {
 		unsigned unit = (1<<i);
 		unsigned num = n_256 / unit;
-		__sh_xor_down( poly256_d , unit , i-1 , zero, num );
+		__sh_xor_down( poly256 , unit , i-1 , zero, num );
 	}
 }
 
+__global__
+void __sh_xor_up_a(u256 *poly256, unsigned unit, unsigned _op, u256 zero) {
+	poly256 += (blockIdx.x * blockDim.x + threadIdx.x) * unit;
+	poly256[0] ^= _sh_op[_op](poly256[unit>>1],zero);
+}
+
+__global__
+void __sh_xor_up_b(u256 *poly256, unsigned unit, unsigned _op) {
+	uint64_t i = blockIdx.y;
+	poly256 += (blockIdx.x * blockDim.x + threadIdx.x) * unit;
+	poly256[i+1] ^= _sh_op[_op]( poly256[(unit>>1)+i+1] , poly256[(unit>>1)+i] );
+}
+
+__global__
+void __sh_xor_up_c(u256 *poly256, unsigned unit, unsigned _op, u256 zero) {
+	poly256 += (blockIdx.x * blockDim.x + threadIdx.x) * unit;
+	poly256[(unit>>1)] ^= _sh_op_zerohigh[_op](zero,poly256[unit-1]);
+}
 
 static inline
-void __sh_xor_up( u256* poly256 , unsigned unit , unsigned _op , u256 zero )
+void __sh_xor_up( u256* poly256 , unsigned unit , unsigned _op , u256 zero, unsigned num )
 {
-	unsigned unit_2 = unit>>1;
-	poly256[0] ^= _sh_op[_op](poly256[unit_2],zero);
-	for(unsigned i=0;i<unit_2-1;i++) {
-		poly256[i+1] ^= _sh_op[_op]( poly256[unit_2+i+1] , poly256[unit_2+i] );
-	}
-	poly256[unit_2] ^= _sh_op_zerohigh[_op](zero,poly256[unit-1]);
+	__sh_xor_up_a<<<(num+1023)/1024, 1024>>>(poly256, unit, _op, zero);
+
+	dim3 nBlock((num+1023)/1024, (unit>>1)-1);
+	__sh_xor_up_b<<<nBlock, 1024>>>(poly256, unit, _op);
+
+	__sh_xor_up_c<<<(num+1023)/1024, 1024>>>(poly256, unit, _op, zero);
 }
-
-
 
 static
 void i_varsub_x256( u256* poly256 , unsigned n_256 )
 {
 	if( 1 >= n_256 ) return;
 	unsigned log_n = __builtin_ctz( n_256 );
-	u256 zero = _mm256_setzero_si256();
+	u256 zero;
+	// __m256i zero = _mm256_setzero_si256();
 
 	unsigned _log_n = (log_n>8)? 8 : log_n;
 	for(unsigned i=1; i<=_log_n ; i++) {
 		unsigned unit = (1<<i);
 		unsigned num = n_256 / unit;
-		for(unsigned j=0;j<num;j++) __sh_xor_up( poly256 + j*unit , unit , i-1 , zero );
+		__sh_xor_up( poly256 , unit , i-1 , zero, num );
 	}
 
 	for(unsigned i=9;i<=log_n ; i++ ) {
 		unsigned unit = 1<<i;
 		unsigned num = n_256/unit;
 		unsigned unit_2 = unit>>1;
-		for(unsigned j=0;j<num;j++) __xor_up_256_2( poly256+j*unit , unit_2 , (1<<(i-9)) );
+		__xor_up_256_2( poly256 , unit_2 , (1<<(i-9)), num, unit );
 	}
 }
 
@@ -940,30 +954,22 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	u256 * poly256 = (u256*) poly;
 	unsigned n_256 = n_terms>>2;
 
-	u256 *poly256_d;
-	cudaMalloc(&poly256_d, n_terms / 4 * sizeof(*poly256_d));
-
 	varsub_x256( poly256 , n_256 );
-
-	cudaMemcpy(poly256_d, poly256, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyHostToDevice);
 
 #ifdef BC_CODE_GEN
         int logn = LOG2(n_256);
-        bc_to_lch_256_30_12(poly256_d,logn);
+        bc_to_lch_256_30_12(poly256,logn);
 
         for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
-            bc_to_lch_256_19_17(poly256_d+i*(1<<19),MIN(19,logn));
+            bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
         }
         for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
-	    	bc_to_lch_256_16(poly256_d+i*(1<<16), MIN(16,logn));
+	    	bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));
         }
 
 #else
 	_bc_to_lch_256( poly256 , n_256 , 1 );
 #endif
-
-	cudaMemcpy(poly256, poly256_d, n_terms / 4 * sizeof(*poly256_d), cudaMemcpyDeviceToHost);
-	cudaFree(poly256_d);
 }
 
 
@@ -978,7 +984,7 @@ void bc_to_mono_2_unit256( bc_sto_t * poly , unsigned n_terms )
 #ifdef BC_CODE_GEN
         int logn = LOG2(n_256);
         for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
-	    bc_to_mono_256_16(poly256+i*(1<<16), MIN(16,logn));
+	    	bc_to_mono_256_16(poly256+i*(1<<16), MIN(16,logn));
         }
         for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
             bc_to_mono_256_19_17(poly256+i*(1<<19),MIN(19,logn));

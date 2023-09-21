@@ -2,6 +2,10 @@
     "files.associations": {
         "bc_to_mono_gen_code.c": "cpp",
         "chrono": "cpp",
-        "cmath": "cpp"
+        "cmath": "cpp",
+        "array": "cpp",
+        "string": "cpp",
+        "string_view": "cpp",
+        "vector": "cpp"
     }
 }
