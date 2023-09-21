@@ -70,6 +70,9 @@ all: $(OBJ) $(EXE)
 tests:
 	cd tests; make
 
+submit:
+	sbatch -n 16 -N 1 --gpus-per-node=1 run_test.sh
+
 tables:
 	cd supplement; make
 
