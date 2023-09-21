@@ -507,7 +507,7 @@ void xor_down_256( u256 * poly , unsigned st , unsigned len , unsigned diff )
 
 static inline
 void __xor_down_256_2( u256 * poly , unsigned len , unsigned l_st, unsigned num, unsigned unit ) {
-	dim3 nBlock = dim3((len - l_st + 1023) / 1024, num);
+	dim3 nBlock((len - l_st + 1023) / 1024, num);
 	__xor_down_256<<<nBlock, 1024>>>(poly, l_st, len, len, unit);
 }
 
@@ -682,7 +682,7 @@ void bc_to_mono_256( bc_sto_t * poly , unsigned n_terms )
 
 //#include "byte_inline_func.h"
 
-static
+__device__
 u256 _mm256_alignr_255bit_zerohigh( u256 zerohigh , u256 low )
 {
 	// __m256i l_shr_15 = _mm256_srli_epi16( low , 15 );
@@ -694,7 +694,7 @@ u256 _mm256_alignr_255bit_zerohigh( u256 zerohigh , u256 low )
 	return r_1.srli<uint8_t>(14);
 }
 
-static
+__device__
 u256 _mm256_alignr_254bit_zerohigh( u256 zerohigh , u256 low )
 {
 	// __m256i l_shr_14 = _mm256_srli_epi16( low , 14 );
@@ -706,7 +706,7 @@ u256 _mm256_alignr_254bit_zerohigh( u256 zerohigh , u256 low )
 	return r_2.srli<uint8_t>(14);
 }
 
-static
+__device__
 u256 _mm256_alignr_252bit_zerohigh( u256 zerohigh , u256 low )
 {
 	// __m256i l_shr_12 = _mm256_srli_epi16( low , 12 );
@@ -718,7 +718,7 @@ u256 _mm256_alignr_252bit_zerohigh( u256 zerohigh , u256 low )
 	return r_4.srli<uint8_t>(14);
 }
 
-static
+__device__
 u256 _mm256_alignr_255bit( u256 high , u256 low )
 {
 	// __m256i l_shr_15 = _mm256_srli_epi16( low , 15 );
@@ -737,7 +737,7 @@ u256 _mm256_alignr_255bit( u256 high , u256 low )
 	return r;
 }
 
-static
+__device__
 u256 _mm256_alignr_254bit( u256 high , u256 low )
 {
 	// __m256i l_shr_14 = _mm256_srli_epi16( low , 14 );
@@ -759,7 +759,7 @@ u256 _mm256_alignr_254bit( u256 high , u256 low )
 	return r;
 }
 
-static
+__device__
 u256 _mm256_alignr_252bit( u256 high , u256 low )
 {
 	// __m256i l_shr_12 = _mm256_srli_epi16( low , 12 );
@@ -781,7 +781,7 @@ u256 _mm256_alignr_252bit( u256 high , u256 low )
 	return r;
 }
 
-static
+__device__
 u256 _mm256_alignr_31byte( u256 high , u256 low )
 {
 	// __m256i l0 = _mm256_permute2x128_si256( low , high , 0x21 );
@@ -792,7 +792,7 @@ u256 _mm256_alignr_31byte( u256 high , u256 low )
 	
 }
 
-static
+__device__
 u256 _mm256_alignr_30byte( u256 high , u256 low )
 {
 	// __m256i l0 = _mm256_permute2x128_si256( low , high , 0x21 );
@@ -802,7 +802,7 @@ u256 _mm256_alignr_30byte( u256 high , u256 low )
 	return high.alignr(l0 , 14);
 }
 
-static
+__device__
 u256 _mm256_alignr_28byte( u256 high , u256 low )
 {
 	// __m256i l0 = _mm256_permute2x128_si256( low , high , 0x21 );
@@ -812,7 +812,7 @@ u256 _mm256_alignr_28byte( u256 high , u256 low )
 	return high.alignr(l0 , 12);
 }
 
-static
+__device__
 u256 _mm256_alignr_24byte( u256 high , u256 low )
 {
 	// __m256i l0 = _mm256_permute2x128_si256( low , high , 0x21 );
@@ -822,7 +822,7 @@ u256 _mm256_alignr_24byte( u256 high , u256 low )
 	return high.alignr(l0 , 8);
 }
 
-static
+__device__
 u256 _mm256_alignr_16byte( u256 high , u256 low )
 {
 	// return _mm256_permute2x128_si256( low , high , 0x21 );
@@ -830,26 +830,43 @@ u256 _mm256_alignr_16byte( u256 high , u256 low )
 	return low.permute2x128(high , 0x21);
 }
 
-static
+__device__
 u256 (*_sh_op[8]) (u256 h, u256 l) = {
 	_mm256_alignr_255bit, _mm256_alignr_254bit, _mm256_alignr_252bit, _mm256_alignr_31byte, _mm256_alignr_30byte, _mm256_alignr_28byte, _mm256_alignr_24byte, _mm256_alignr_16byte
 };
 
-static
+__device__
 u256 (*_sh_op_zerohigh[8]) (u256 h, u256 l) = {
 	_mm256_alignr_255bit_zerohigh , _mm256_alignr_254bit_zerohigh , _mm256_alignr_252bit_zerohigh , _mm256_alignr_31byte, _mm256_alignr_30byte, _mm256_alignr_28byte, _mm256_alignr_24byte, _mm256_alignr_16byte
 };
 
+__global__ __sh_xor_down_a(u256 poly256, unsigned unit, unsigned _op, u256 zero) {
+	poly256 += blockIdx.x * unit;
+	poly256[(unit>>1)] ^= _sh_op_zerohigh[_op](zero,poly256[unit-1]);
+}
 
-static inline
-void __sh_xor_down( u256* poly256 , unsigned unit , unsigned _op , u256 zero )
-{
-	unsigned unit_2 = unit>>1;
-	poly256[unit_2] ^= _sh_op_zerohigh[_op](zero,poly256[unit-1]);
-	for(unsigned i=0;i<unit_2-1;i++) {
-		poly256[unit_2-1-i] ^= _sh_op[_op]( poly256[unit-1-i] , poly256[unit-2-i] );
-	}
+__global__ __sh_xor_down_b(u256 poly256, unsigned unit, unsigned _op) {
+	uint64_t i = blockIdx.y * blockDim.y + threadIdx.y;
+	poly256 += blockIdx.x * unit;
+	poly256[(unit>>1)-1-i] ^= _sh_op[_op]( poly256[unit-1-i] , poly256[unit-2-i] );
+}
+
+__global__ __sh_xor_down_c(u256 poly256, unsigned unit_2, unsigned _op, u256 zero) {
+	poly256 += blockIdx.x * unit;
 	poly256[0] ^= _sh_op[_op](poly256[unit_2],zero);
+}
+
+static
+void __sh_xor_down( u256* poly256 , unsigned unit , unsigned _op , u256 zero, unsigned num )
+{
+	__sh_xor_down_a<<<(num + 1023) / 1024, 1024>>>(poly256, unit, _op, zero);
+
+	unsigned unit_2 = unit>>1;
+
+	dim3 nBlock((num + 1023) / 1024, unit_2-1);
+	__sh_xor_down_b<<<nBlock, 1024>>>(poly256, unit, _op);
+
+	__sh_xor_down_c<<<(num + 1023) / 1024, 1024>>>(poly256, unit_2, _op, zero);
 }
 
 
@@ -874,7 +891,7 @@ void varsub_x256( u256* poly256_d , unsigned n_256 )
 	for(unsigned i=log_n; i>0 ; i--) {
 		unsigned unit = (1<<i);
 		unsigned num = n_256 / unit;
-		for(unsigned j=0;j<num;j++) __sh_xor_down( poly256_d + j*unit , unit , i-1 , zero );
+		__sh_xor_down( poly256_d , unit , i-1 , zero, num );
 	}
 }
 

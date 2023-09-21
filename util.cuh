@@ -8,6 +8,17 @@ private:
     uint64_t data[4];
 
 public:
+    __device__ _u256() {
+        memset(data, 0, size);
+    }
+
+    __device__ _u256(uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
+        data[0] = a;
+        data[1] = b;
+        data[2] = c;
+        data[3] = d;
+    }
+
     __device__ _u256& operator^=(_u256 &rhs) {
         for (int i = 0; i < 4; i++) {
             data[i] ^= rhs.data[i];
@@ -63,9 +74,8 @@ public:
         if (n > 64) offs++;
         if (n > 128) offs++;
 
-        _u256 joint0, joint1;
-        joint0.data = {b.data[0], b.data[1], data[0], data[1]};
-        joint1.data = {b.data[2], b.data[3], data[2], data[3]};
+        _u256 joint0(b.data[0], b.data[1], data[0], data[1]);
+        _u256 joint1(b.data[2], b.data[3], data[2], data[3]);
 
         for (int i = 0; i < 2; i++) {
             res.data[i] |= joint0.data[i+offs] >> n;
