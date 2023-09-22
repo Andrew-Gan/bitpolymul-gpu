@@ -66,7 +66,7 @@ unsigned get_max_si( unsigned deg ) {
 #include <emmintrin.h>
 #include <immintrin.h>
 
-#include "bc_to_mono_gen_code.c"
+#include "bc_to_mono_gen_code.cu"
 #include "bc_to_lch_gen_code.cu"
 
 
@@ -954,15 +954,17 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	u256 * poly256 = (u256*) poly;
 	unsigned n_256 = n_terms>>2;
 
-	varsub_x256( poly256 , n_256 );
+	// varsub_x256( poly256 , n_256 );
 
 #ifdef BC_CODE_GEN
         int logn = LOG2(n_256);
-        bc_to_lch_256_30_12(poly256,logn);
+        // bc_to_lch_256_30_12(poly256,logn);
 
-        for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
-            bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
-        }
+        // for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
+        //     bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
+        // }
+
+		// 75.6 ms, called 1632 times, 4.7 ms each
         for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
 	    	bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));
         }

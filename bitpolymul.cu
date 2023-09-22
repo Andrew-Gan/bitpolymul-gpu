@@ -198,14 +198,16 @@ bm_start(&bm_bc);
 
 	// memcpy( a_bc , a , sizeof(uint64_t)*_n_64 );
 	cudaMemcpy(a_bc_d, a, sizeof(uint64_t)*n_64, cudaMemcpyHostToDevice);
-	for(unsigned i=_n_64;i<n_64;i++) a_bc_d[i] = 0;
+	cudaMemset(a_bc_d+_n_64, 0, sizeof(uint64_t) * (n_64-_n_64));
+	// for(unsigned i=_n_64;i<n_64;i++) a_bc_d[i] = 0;
 	//bc_to_lch_2( a_bc , n_64 );
 	bc_to_lch_2_unit256( a_bc_d , n_64 );
 		//for(unsigned i=n_64;i<n_64*2;i++) a_bc[i] = 0;
 
 	// memcpy( b_bc , b , sizeof(uint64_t)*_n_64 );
 	cudaMemcpy(b_bc_d, b, sizeof(uint64_t)*n_64, cudaMemcpyHostToDevice);
-	for(unsigned i=_n_64;i<n_64;i++) b_bc_d[i] = 0;
+	cudaMemset(b_bc_d+_n_64, 0, sizeof(uint64_t) * (n_64-_n_64));
+	// for(unsigned i=_n_64;i<n_64;i++) b_bc_d[i] = 0;
 	//bc_to_lch_2( b_bc , n_64 );
 	bc_to_lch_2_unit256( b_bc_d , n_64 );
 		//for(unsigned i=n_64;i<n_64*2;i++) b_bc[i] = 0;
@@ -320,26 +322,37 @@ void bitpolymul_2_64( uint64_t * c , const uint64_t * a , const uint64_t * b , u
 	//uint64_t * b_bc = (uint64_t*)aligned_alloc( 32 , sizeof(uint64_t)*n_64*2 );
 	if( NULL == b_bc ) { printf("alloc fail.\n"); exit(-1); }
 
+	uint64_t *a_bc_d, *b_bc_d;
+	cudaMalloc(&a_bc_d, sizeof(uint64_t)*n_64);
+	cudaMalloc(&b_bc_d, sizeof(uint64_t)*n_64);
+
 #ifdef _PROFILE_
 bm_start(&bm_bc);
 #endif
-	memcpy( a_bc , a , sizeof(uint64_t)*_n_64 );
-	for(unsigned i=_n_64;i<n_64;i++) a_bc[i] = 0;
+	// memcpy( a_bc , a , sizeof(uint64_t)*_n_64 );
+	cudaMemcpy(a_bc_d, a, sizeof(uint64_t)*n_64, cudaMemcpyHostToDevice);
+	cudaMemset(a_bc_d+_n_64, 0, sizeof(uint64_t) * (n_64-_n_64));
+	// for(unsigned i=_n_64;i<n_64;i++) a_bc[i] = 0;
 	//for(unsigned i=n_64;i<2*n_64;i++) a_bc[i] = 0;
 	//bc_to_lch_2( a_bc , n_64 );
-	bc_to_lch_2_unit256( a_bc , n_64 );
+	bc_to_lch_2_unit256( a_bc_d , n_64 );
 		//for(unsigned i=n_64;i<n_64*2;i++) a_bc[i] = 0;
 
-	memcpy( b_bc , b , sizeof(uint64_t)*_n_64 );
-	for(unsigned i=_n_64;i<n_64;i++) b_bc[i] = 0;
+	// memcpy( b_bc , b , sizeof(uint64_t)*_n_64 );
+	cudaMemcpy(b_bc_d, b, sizeof(uint64_t)*n_64, cudaMemcpyHostToDevice);
+	cudaMemset(b_bc_d+_n_64, 0, sizeof(uint64_t) * (n_64-_n_64));
+	// for(unsigned i=_n_64;i<n_64;i++) b_bc[i] = 0;
 	//for(unsigned i=n_64;i<2*n_64;i++) b_bc[i] = 0;
 	//bc_to_lch_2( b_bc , n_64 );
-	bc_to_lch_2_unit256( b_bc , n_64 );
+	bc_to_lch_2_unit256( b_bc_d , n_64 );
 		//for(unsigned i=n_64;i<n_64*2;i++) b_bc[i] = 0;
 
 #ifdef _PROFILE_
 bm_stop(&bm_bc);
 #endif
+
+	cudaMemcpy(a_bc, a_bc_d, sizeof(uint64_t)*n_64, cudaMemcpyDeviceToHost);
+	cudaMemcpy(b_bc, b_bc_d, sizeof(uint64_t)*n_64, cudaMemcpyDeviceToHost);
 
 	unsigned n_terms = n_64*2;
 	unsigned log_n = __builtin_ctz( n_terms );

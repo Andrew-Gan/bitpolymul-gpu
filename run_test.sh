@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd $SLURM_SUBMIT_DIR
+
 # ./bitpolymul-test 15
 # ./bitpolymul-test 16
 # ./bitpolymul-test 17

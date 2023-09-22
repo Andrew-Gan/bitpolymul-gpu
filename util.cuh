@@ -112,4 +112,16 @@ void xor_gpu(u256* poly, int base, Arguments... offsets) {
     }
 }
 
+template <typename... Arguments>
+__global__
+void xor_gpu_flat(u256* poly, int iBase, int offset, int offsetStride, Arguments... indices) {
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int currOffs = offset + y * offsetStride;
+    int i = iBase + currOffs + x;
+    for (const int index : {indices...}) {
+        poly[i] ^= poly[i + index];
+    }
+}
+
 #endif

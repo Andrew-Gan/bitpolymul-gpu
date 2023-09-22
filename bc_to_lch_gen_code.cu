@@ -567,311 +567,397 @@ void bc_to_lch_256_19_17(u256* poly, int logn){
     }
 }
 
+struct timespec t[20];
+
 static
 void bc_to_lch_256_16(u256* poly, int logn){
-    for(int offset=(1<<15);offset<(1<<logn);offset+=(1<<(15+1))){
-        xor_gpu<<<128, 1024>>>(poly, offset+(1<<15)-24576, 16384);
-        // for(int i=offset+(1<<15)-1-16384;i>=offset+(1<<15)-24576;--i)poly[i]^=poly[i+16384];
-        xor_gpu<<<4, 1024>>>(poly, offset+(1<<15)-28672, 16384, 24576);
-        // for(int i=offset+(1<<15)-1-24576;i>=offset+(1<<15)-28672;--i)poly[i]^=poly[i+16384]^poly[i+24576];
-        xor_gpu<<<2, 1024>>>(poly, offset+(1<<15)-30720, 16384, 24576, 28672);
-        // for(int i=offset+(1<<15)-1-28672;i>=offset+(1<<15)-30720;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672];
-        xor_gpu<<<1, 1024>>>(poly, offset+(1<<15)-31744, 16384, 24576, 28672, 30720);
-        // for(int i=offset+(1<<15)-1-30720;i>=offset+(1<<15)-31744;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720];
-        xor_gpu<<<1, 512>>>(poly, offset+(1<<15)-32256, 16384, 24576, 28672, 30720, 31744);
-        // for(int i=offset+(1<<15)-1-31744;i>=offset+(1<<15)-32256;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744];
-        xor_gpu<<<1, 256>>>(poly, offset+(1<<15)-32512, 16384, 24576, 28672, 30720, 31744, 32256);
-        // for(int i=offset+(1<<15)-1-32256;i>=offset+(1<<15)-32512;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256];
-        xor_gpu<<<1, 128>>>(poly, offset+(1<<15)-32640, 16384, 24576, 28672, 30720, 31744, 32256, 32512);
-        // for(int i=offset+(1<<15)-1-32512;i>=offset+(1<<15)-32640;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512];
-        xor_gpu<<<1, 64>>>(poly, offset+(1<<15)-32704, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640);
-        // for(int i=offset+(1<<15)-1-32640;i>=offset+(1<<15)-32704;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640];
-        xor_gpu<<<1, 32>>>(poly, offset+(1<<15)-32736, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704);
-        // for(int i=offset+(1<<15)-1-32704;i>=offset+(1<<15)-32736;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704];
-        xor_gpu<<<1, 16>>>(poly, offset+(1<<15)-32752, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736);
-        // for(int i=offset+(1<<15)-1-32736;i>=offset+(1<<15)-32752;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736];
-        xor_gpu<<<1, 8>>>(poly, offset+(1<<15)-32760, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752);
-        // for(int i=offset+(1<<15)-1-32752;i>=offset+(1<<15)-32760;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752];
-        xor_gpu<<<1, 4>>>(poly, offset+(1<<15)-32764, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760);
-        // for(int i=offset+(1<<15)-1-32760;i>=offset+(1<<15)-32764;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760];
-        xor_gpu<<<1, 2>>>(poly, offset+(1<<15)-32766, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764);
-        // for(int i=offset+(1<<15)-1-32764;i>=offset+(1<<15)-32766;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<15)-32767, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766);
-        // for(int i=offset+(1<<15)-1-32766;i>=offset+(1<<15)-32767;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<15)-32768, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset+(1<<15)-1-32767;i>=offset+(1<<15)-32768;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<16, 1024>>>(poly, offset-16384, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-0;i>=offset-16384;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<8, 1024>>>(poly, offset-24576, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-16384;i>=offset-24576;--i)poly[i]^=poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<4, 1024>>>(poly, offset-28672, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-24576;i>=offset-28672;--i)poly[i]^=poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<2, 1024>>>(poly, offset-30720, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-28672;i>=offset-30720;--i)poly[i]^=poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 1024>>>(poly, offset-31744, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-30720;i>=offset-31744;--i)poly[i]^=poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 512>>>(poly, offset-32256, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-31744;i>=offset-32256;--i)poly[i]^=poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 256>>>(poly, offset-32512, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-32256;i>=offset-32512;--i)poly[i]^=poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 128>>>(poly, offset-32640, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-32512;i>=offset-32640;--i)poly[i]^=poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 64>>>(poly, offset-32704, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-32640;i>=offset-32704;--i)poly[i]^=poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 32>>>(poly, offset-32736, 32736, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-32704;i>=offset-32736;--i)poly[i]^=poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 16>>>(poly, offset-32752, 32752, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-32736;i>=offset-32752;--i)poly[i]^=poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 8>>>(poly, offset-32760, 32760, 32764, 32766, 32767);
-        // for(int i=offset-1-32752;i>=offset-32760;--i)poly[i]^=poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 4>>>(poly, offset-32764, 32764, 32766, 32767);
-        // for(int i=offset-1-32760;i>=offset-32764;--i)poly[i]^=poly[i+32764]^poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 2>>>(poly, offset-32766, 32766, 32767);
-        // for(int i=offset-1-32764;i>=offset-32766;--i)poly[i]^=poly[i+32766]^poly[i+32767];
-        xor_gpu<<<1, 1>>>(poly, offset-32767, 32767);
-        // for(int i=offset-1-32766;i>=offset-32767;--i)poly[i]^=poly[i+32767];
-    }
+    dim3 nBlock, nThread;
+    cudaError_t err = cudaDeviceSynchronize();
+    // printf("0 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[0]);
+    // for(int offset=(1<<15);offset<(1<<logn);offset+=(1<<(15+1))){
+    //     xor_gpu<<<128, 1024>>>(poly, offset+(1<<15)-24576, 16384);
+    //     // for(int i=offset+(1<<15)-1-16384;i>=offset+(1<<15)-24576;--i)poly[i]^=poly[i+16384];
+    //     xor_gpu<<<4, 1024>>>(poly, offset+(1<<15)-28672, 16384, 24576);
+    //     // for(int i=offset+(1<<15)-1-24576;i>=offset+(1<<15)-28672;--i)poly[i]^=poly[i+16384]^poly[i+24576];
+    //     xor_gpu<<<2, 1024>>>(poly, offset+(1<<15)-30720, 16384, 24576, 28672);
+    //     // for(int i=offset+(1<<15)-1-28672;i>=offset+(1<<15)-30720;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672];
+    //     xor_gpu<<<1, 1024>>>(poly, offset+(1<<15)-31744, 16384, 24576, 28672, 30720);
+    //     // for(int i=offset+(1<<15)-1-30720;i>=offset+(1<<15)-31744;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720];
+    //     xor_gpu<<<1, 512>>>(poly, offset+(1<<15)-32256, 16384, 24576, 28672, 30720, 31744);
+    //     // for(int i=offset+(1<<15)-1-31744;i>=offset+(1<<15)-32256;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744];
+    //     xor_gpu<<<1, 256>>>(poly, offset+(1<<15)-32512, 16384, 24576, 28672, 30720, 31744, 32256);
+    //     // for(int i=offset+(1<<15)-1-32256;i>=offset+(1<<15)-32512;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256];
+    //     xor_gpu<<<1, 128>>>(poly, offset+(1<<15)-32640, 16384, 24576, 28672, 30720, 31744, 32256, 32512);
+    //     // for(int i=offset+(1<<15)-1-32512;i>=offset+(1<<15)-32640;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512];
+    //     xor_gpu<<<1, 64>>>(poly, offset+(1<<15)-32704, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640);
+    //     // for(int i=offset+(1<<15)-1-32640;i>=offset+(1<<15)-32704;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640];
+    //     xor_gpu<<<1, 32>>>(poly, offset+(1<<15)-32736, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704);
+    //     // for(int i=offset+(1<<15)-1-32704;i>=offset+(1<<15)-32736;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704];
+    //     xor_gpu<<<1, 16>>>(poly, offset+(1<<15)-32752, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736);
+    //     // for(int i=offset+(1<<15)-1-32736;i>=offset+(1<<15)-32752;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736];
+    //     xor_gpu<<<1, 8>>>(poly, offset+(1<<15)-32760, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752);
+    //     // for(int i=offset+(1<<15)-1-32752;i>=offset+(1<<15)-32760;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752];
+    //     xor_gpu<<<1, 4>>>(poly, offset+(1<<15)-32764, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760);
+    //     // for(int i=offset+(1<<15)-1-32760;i>=offset+(1<<15)-32764;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760];
+    //     xor_gpu<<<1, 2>>>(poly, offset+(1<<15)-32766, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764);
+    //     // for(int i=offset+(1<<15)-1-32764;i>=offset+(1<<15)-32766;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<15)-32767, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766);
+    //     // for(int i=offset+(1<<15)-1-32766;i>=offset+(1<<15)-32767;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<15)-32768, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset+(1<<15)-1-32767;i>=offset+(1<<15)-32768;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<16, 1024>>>(poly, offset-16384, 16384, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-0;i>=offset-16384;--i)poly[i]^=poly[i+16384]^poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<8, 1024>>>(poly, offset-24576, 24576, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-16384;i>=offset-24576;--i)poly[i]^=poly[i+24576]^poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<4, 1024>>>(poly, offset-28672, 28672, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-24576;i>=offset-28672;--i)poly[i]^=poly[i+28672]^poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<2, 1024>>>(poly, offset-30720, 30720, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-28672;i>=offset-30720;--i)poly[i]^=poly[i+30720]^poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 1024>>>(poly, offset-31744, 31744, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-30720;i>=offset-31744;--i)poly[i]^=poly[i+31744]^poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 512>>>(poly, offset-32256, 32256, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-31744;i>=offset-32256;--i)poly[i]^=poly[i+32256]^poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 256>>>(poly, offset-32512, 32512, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32256;i>=offset-32512;--i)poly[i]^=poly[i+32512]^poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 128>>>(poly, offset-32640, 32640, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32512;i>=offset-32640;--i)poly[i]^=poly[i+32640]^poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 64>>>(poly, offset-32704, 32704, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32640;i>=offset-32704;--i)poly[i]^=poly[i+32704]^poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 32>>>(poly, offset-32736, 32736, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32704;i>=offset-32736;--i)poly[i]^=poly[i+32736]^poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 16>>>(poly, offset-32752, 32752, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32736;i>=offset-32752;--i)poly[i]^=poly[i+32752]^poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 8>>>(poly, offset-32760, 32760, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32752;i>=offset-32760;--i)poly[i]^=poly[i+32760]^poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 4>>>(poly, offset-32764, 32764, 32766, 32767);
+    //     // for(int i=offset-1-32760;i>=offset-32764;--i)poly[i]^=poly[i+32764]^poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 2>>>(poly, offset-32766, 32766, 32767);
+    //     // for(int i=offset-1-32764;i>=offset-32766;--i)poly[i]^=poly[i+32766]^poly[i+32767];
+    //     xor_gpu<<<1, 1>>>(poly, offset-32767, 32767);
+    //     // for(int i=offset-1-32766;i>=offset-32767;--i)poly[i]^=poly[i+32767];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("1 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[1]);
 
-    for(int offset=(1<<14);offset<(1<<logn);offset+=(1<<(14+1))){
-        xor_gpu<<<3, 1024>>>(poly, offset+(1<<14)-15360, 12288);
-        // for(int i=offset+(1<<14)-1-12288;i>=offset+(1<<14)-15360;--i)poly[i]^=poly[i+12288];
-        xor_gpu<<<1, 768>>>(poly, offset+(1<<14)-16128, 12288, 15360);
-        // for(int i=offset+(1<<14)-1-15360;i>=offset+(1<<14)-16128;--i)poly[i]^=poly[i+12288]^poly[i+15360];
-        xor_gpu<<<1, 192>>>(poly, offset+(1<<14)-16320, 12288, 15360, 16128);
-        // for(int i=offset+(1<<14)-1-16128;i>=offset+(1<<14)-16320;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128];
-        xor_gpu<<<1, 48>>>(poly, offset+(1<<14)-16368, 12288, 15360, 16128, 16320);
-        // for(int i=offset+(1<<14)-1-16320;i>=offset+(1<<14)-16368;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320];
-        xor_gpu<<<1, 12>>>(poly, offset+(1<<14)-16380, 12288, 15360, 16128, 16320, 16368);
-        // for(int i=offset+(1<<14)-1-16368;i>=offset+(1<<14)-16380;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368];
-        xor_gpu<<<1, 3>>>(poly, offset+(1<<14)-16383, 12288, 15360, 16128, 16320, 16368, 16380);
-        // for(int i=offset+(1<<14)-1-16380;i>=offset+(1<<14)-16383;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<14)-16384, 12288, 15360, 16128, 16320, 16368, 16380, 16383);
-        // for(int i=offset+(1<<14)-1-16383;i>=offset+(1<<14)-16384;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
-        xor_gpu<<<12, 1024>>>(poly, offset-12288, 12288, 15360, 16128, 16320, 16368, 16380, 16383);
-        // for(int i=offset-1-0;i>=offset-12288;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
-        xor_gpu<<<3, 1024>>>(poly, offset-15360, 15360, 16128, 16320, 16368, 16380, 16383);
-        // for(int i=offset-1-12288;i>=offset-15360;--i)poly[i]^=poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
-        xor_gpu<<<1, 768>>>(poly, offset-16128, 16128, 16320, 16368, 16380, 16383);
-        // for(int i=offset-1-15360;i>=offset-16128;--i)poly[i]^=poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
-        xor_gpu<<<1, 192>>>(poly, offset-16128, 16320, 16368, 16380, 16383);
-        // for(int i=offset-1-16128;i>=offset-16128;--i)poly[i]^=poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
-        xor_gpu<<<1, 48>>>(poly, offset-16368, 16368, 16380, 16383);
-        // for(int i=offset-1-16320;i>=offset-16368;--i)poly[i]^=poly[i+16368]^poly[i+16380]^poly[i+16383];
-        xor_gpu<<<1, 12>>>(poly, offset-16380, 16380, 16383);
-        // for(int i=offset-1-16368;i>=offset-16380;--i)poly[i]^=poly[i+16380]^poly[i+16383];
-        xor_gpu<<<1, 3>>>(poly, offset-16383, 16383);
-        // for(int i=offset-1-16380;i>=offset-16383;--i)poly[i]^=poly[i+16383];
-    }
+    // for(int offset=(1<<14);offset<(1<<logn);offset+=(1<<(14+1))){
+    //     xor_gpu<<<3, 1024>>>(poly, offset+(1<<14)-15360, 12288);
+    //     // for(int i=offset+(1<<14)-1-12288;i>=offset+(1<<14)-15360;--i)poly[i]^=poly[i+12288];
+    //     xor_gpu<<<1, 768>>>(poly, offset+(1<<14)-16128, 12288, 15360);
+    //     // for(int i=offset+(1<<14)-1-15360;i>=offset+(1<<14)-16128;--i)poly[i]^=poly[i+12288]^poly[i+15360];
+    //     xor_gpu<<<1, 192>>>(poly, offset+(1<<14)-16320, 12288, 15360, 16128);
+    //     // for(int i=offset+(1<<14)-1-16128;i>=offset+(1<<14)-16320;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128];
+    //     xor_gpu<<<1, 48>>>(poly, offset+(1<<14)-16368, 12288, 15360, 16128, 16320);
+    //     // for(int i=offset+(1<<14)-1-16320;i>=offset+(1<<14)-16368;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320];
+    //     xor_gpu<<<1, 12>>>(poly, offset+(1<<14)-16380, 12288, 15360, 16128, 16320, 16368);
+    //     // for(int i=offset+(1<<14)-1-16368;i>=offset+(1<<14)-16380;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368];
+    //     xor_gpu<<<1, 3>>>(poly, offset+(1<<14)-16383, 12288, 15360, 16128, 16320, 16368, 16380);
+    //     // for(int i=offset+(1<<14)-1-16380;i>=offset+(1<<14)-16383;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<14)-16384, 12288, 15360, 16128, 16320, 16368, 16380, 16383);
+    //     // for(int i=offset+(1<<14)-1-16383;i>=offset+(1<<14)-16384;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<12, 1024>>>(poly, offset-12288, 12288, 15360, 16128, 16320, 16368, 16380, 16383);
+    //     // for(int i=offset-1-0;i>=offset-12288;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<3, 1024>>>(poly, offset-15360, 15360, 16128, 16320, 16368, 16380, 16383);
+    //     // for(int i=offset-1-12288;i>=offset-15360;--i)poly[i]^=poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<1, 768>>>(poly, offset-16128, 16128, 16320, 16368, 16380, 16383);
+    //     // for(int i=offset-1-15360;i>=offset-16128;--i)poly[i]^=poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<1, 192>>>(poly, offset-16128, 16320, 16368, 16380, 16383);
+    //     // for(int i=offset-1-16128;i>=offset-16128;--i)poly[i]^=poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<1, 48>>>(poly, offset-16368, 16368, 16380, 16383);
+    //     // for(int i=offset-1-16320;i>=offset-16368;--i)poly[i]^=poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<1, 12>>>(poly, offset-16380, 16380, 16383);
+    //     // for(int i=offset-1-16368;i>=offset-16380;--i)poly[i]^=poly[i+16380]^poly[i+16383];
+    //     xor_gpu<<<1, 3>>>(poly, offset-16383, 16383);
+    //     // for(int i=offset-1-16380;i>=offset-16383;--i)poly[i]^=poly[i+16383];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("2 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[2]);
 
-    for(int offset=(1<<13);offset<(1<<logn);offset+=(1<<(13+1))){
-        xor_gpu<<<7, 512>>>(poly, offset+(1<<13)-7680, 4096);
-        // for(int i=offset+(1<<13)-1-4096;i>=offset+(1<<13)-7680;--i)poly[i]^=poly[i+4096];
-        xor_gpu<<<1, 256>>>(poly, offset+(1<<13)-7936, 4096, 7680);
-        // for(int i=offset+(1<<13)-1-7680;i>=offset+(1<<13)-7936;--i)poly[i]^=poly[i+4096]^poly[i+7680];
-        xor_gpu<<<1, 224>>>(poly, offset+(1<<13)-8160, 4096, 7680, 7936);
-        // for(int i=offset+(1<<13)-1-7936;i>=offset+(1<<13)-8160;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936];
-        xor_gpu<<<1, 16>>>(poly, offset+(1<<13)-8176, 4096, 7680, 7936, 8160);
-        // for(int i=offset+(1<<13)-1-8160;i>=offset+(1<<13)-8176;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160];
-        xor_gpu<<<1, 14>>>(poly, offset+(1<<13)-8190, 4096, 7680, 7936, 8160, 8176);
-        // for(int i=offset+(1<<13)-1-8176;i>=offset+(1<<13)-8190;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<13)-8191, 4096, 7680, 7936, 8160, 8176, 8190);
-        // for(int i=offset+(1<<13)-1-8190;i>=offset+(1<<13)-8191;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<13)-8192, 4096, 7680, 7936, 8160, 8176, 8190, 8191);
-        // for(int i=offset+(1<<13)-1-8191;i>=offset+(1<<13)-8192;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
-        xor_gpu<<<4, 1024>>>(poly, offset-4096, 4096, 7680, 7936, 8160, 8176, 8190, 8191);
-        // for(int i=offset-1-0;i>=offset-4096;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
-        xor_gpu<<<6, 512>>>(poly, offset-7680, 7680, 7936, 8160, 8176, 8190, 8191);
-        // for(int i=offset-1-4096;i>=offset-7680;--i)poly[i]^=poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
-        xor_gpu<<<1, 256>>>(poly, offset-7936, 7936, 8160, 8176, 8190, 8191);
-        // for(int i=offset-1-7680;i>=offset-7936;--i)poly[i]^=poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
-        xor_gpu<<<1, 224>>>(poly, offset-8160, 8160, 8176, 8190, 8191);
-        // for(int i=offset-1-7936;i>=offset-8160;--i)poly[i]^=poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
-        xor_gpu<<<1, 16>>>(poly, offset-8176, 8176, 8190, 8191);
-        // for(int i=offset-1-8160;i>=offset-8176;--i)poly[i]^=poly[i+8176]^poly[i+8190]^poly[i+8191];
-        xor_gpu<<<1, 14>>>(poly, offset-8190, 8190, 8191);
-        // for(int i=offset-1-8176;i>=offset-8190;--i)poly[i]^=poly[i+8190]^poly[i+8191];
-        xor_gpu<<<1, 1>>>(poly, offset-8191, 8191);
-        // for(int i=offset-1-8190;i>=offset-8191;--i)poly[i]^=poly[i+8191];
-    }
+    // for(int offset=(1<<13);offset<(1<<logn);offset+=(1<<(13+1))){
+    //     xor_gpu<<<7, 512>>>(poly, offset+(1<<13)-7680, 4096);
+    //     // for(int i=offset+(1<<13)-1-4096;i>=offset+(1<<13)-7680;--i)poly[i]^=poly[i+4096];
+    //     xor_gpu<<<1, 256>>>(poly, offset+(1<<13)-7936, 4096, 7680);
+    //     // for(int i=offset+(1<<13)-1-7680;i>=offset+(1<<13)-7936;--i)poly[i]^=poly[i+4096]^poly[i+7680];
+    //     xor_gpu<<<1, 224>>>(poly, offset+(1<<13)-8160, 4096, 7680, 7936);
+    //     // for(int i=offset+(1<<13)-1-7936;i>=offset+(1<<13)-8160;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936];
+    //     xor_gpu<<<1, 16>>>(poly, offset+(1<<13)-8176, 4096, 7680, 7936, 8160);
+    //     // for(int i=offset+(1<<13)-1-8160;i>=offset+(1<<13)-8176;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160];
+    //     xor_gpu<<<1, 14>>>(poly, offset+(1<<13)-8190, 4096, 7680, 7936, 8160, 8176);
+    //     // for(int i=offset+(1<<13)-1-8176;i>=offset+(1<<13)-8190;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<13)-8191, 4096, 7680, 7936, 8160, 8176, 8190);
+    //     // for(int i=offset+(1<<13)-1-8190;i>=offset+(1<<13)-8191;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<13)-8192, 4096, 7680, 7936, 8160, 8176, 8190, 8191);
+    //     // for(int i=offset+(1<<13)-1-8191;i>=offset+(1<<13)-8192;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<4, 1024>>>(poly, offset-4096, 4096, 7680, 7936, 8160, 8176, 8190, 8191);
+    //     // for(int i=offset-1-0;i>=offset-4096;--i)poly[i]^=poly[i+4096]^poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<6, 512>>>(poly, offset-7680, 7680, 7936, 8160, 8176, 8190, 8191);
+    //     // for(int i=offset-1-4096;i>=offset-7680;--i)poly[i]^=poly[i+7680]^poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<1, 256>>>(poly, offset-7936, 7936, 8160, 8176, 8190, 8191);
+    //     // for(int i=offset-1-7680;i>=offset-7936;--i)poly[i]^=poly[i+7936]^poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<1, 224>>>(poly, offset-8160, 8160, 8176, 8190, 8191);
+    //     // for(int i=offset-1-7936;i>=offset-8160;--i)poly[i]^=poly[i+8160]^poly[i+8176]^poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<1, 16>>>(poly, offset-8176, 8176, 8190, 8191);
+    //     // for(int i=offset-1-8160;i>=offset-8176;--i)poly[i]^=poly[i+8176]^poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<1, 14>>>(poly, offset-8190, 8190, 8191);
+    //     // for(int i=offset-1-8176;i>=offset-8190;--i)poly[i]^=poly[i+8190]^poly[i+8191];
+    //     xor_gpu<<<1, 1>>>(poly, offset-8191, 8191);
+    //     // for(int i=offset-1-8190;i>=offset-8191;--i)poly[i]^=poly[i+8191];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("3 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[3]);
 
-    for(int offset=(1<<12);offset<(1<<logn);offset+=(1<<(12+1))){
-        xor_gpu<<<1, 240>>>(poly, offset+(1<<12)-4080, 3840);
-        // for(int i=offset+(1<<12)-1-3840;i>=offset+(1<<12)-4080;--i)poly[i]^=poly[i+3840];
-        xor_gpu<<<1, 15>>>(poly, offset+(1<<12)-4095, 3840, 4080);
-        // for(int i=offset+(1<<12)-1-4080;i>=offset+(1<<12)-4095;--i)poly[i]^=poly[i+3840]^poly[i+4080];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<12)-4096, 3840, 4080, 4095);
-        // for(int i=offset+(1<<12)-1-4095;i>=offset+(1<<12)-4096;--i)poly[i]^=poly[i+3840]^poly[i+4080]^poly[i+4095];
-        xor_gpu<<<15, 256>>>(poly, offset-3840, 3840, 4080, 4095);
-        // for(int i=offset-1-0;i>=offset-3840;--i)poly[i]^=poly[i+3840]^poly[i+4080]^poly[i+4095];
-        xor_gpu<<<1, 240>>>(poly, offset-4080, 4080, 4095);
-        // for(int i=offset-1-3840;i>=offset-4080;--i)poly[i]^=poly[i+4080]^poly[i+4095];
-        xor_gpu<<<1, 15>>>(poly, offset-4095, 4095);
-        // for(int i=offset-1-4080;i>=offset-4095;--i)poly[i]^=poly[i+4095];
-    }
+    // for(int offset=(1<<12);offset<(1<<logn);offset+=(1<<(12+1))){
+    //     xor_gpu<<<1, 240>>>(poly, offset+(1<<12)-4080, 3840);
+    //     // for(int i=offset+(1<<12)-1-3840;i>=offset+(1<<12)-4080;--i)poly[i]^=poly[i+3840];
+    //     xor_gpu<<<1, 15>>>(poly, offset+(1<<12)-4095, 3840, 4080);
+    //     // for(int i=offset+(1<<12)-1-4080;i>=offset+(1<<12)-4095;--i)poly[i]^=poly[i+3840]^poly[i+4080];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<12)-4096, 3840, 4080, 4095);
+    //     // for(int i=offset+(1<<12)-1-4095;i>=offset+(1<<12)-4096;--i)poly[i]^=poly[i+3840]^poly[i+4080]^poly[i+4095];
+    //     xor_gpu<<<15, 256>>>(poly, offset-3840, 3840, 4080, 4095);
+    //     // for(int i=offset-1-0;i>=offset-3840;--i)poly[i]^=poly[i+3840]^poly[i+4080]^poly[i+4095];
+    //     xor_gpu<<<1, 240>>>(poly, offset-4080, 4080, 4095);
+    //     // for(int i=offset-1-3840;i>=offset-4080;--i)poly[i]^=poly[i+4080]^poly[i+4095];
+    //     xor_gpu<<<1, 15>>>(poly, offset-4095, 4095);
+    //     // for(int i=offset-1-4080;i>=offset-4095;--i)poly[i]^=poly[i+4095];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("4 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[4]);
 
-    for(int offset=(1<<11);offset<(1<<logn);offset+=(1<<(11+1))){
-        xor_gpu<<<1, 512>>>(poly, offset+(1<<11)-1536, 1024);
-        // for(int i=offset+(1<<11)-1-1024;i>=offset+(1<<11)-1536;--i)poly[i]^=poly[i+1024];
-        xor_gpu<<<1, 256>>>(poly, offset+(1<<11)-1792, 1024, 1536);
-        // for(int i=offset+(1<<11)-1-1536;i>=offset+(1<<11)-1792;--i)poly[i]^=poly[i+1024]^poly[i+1536];
-        xor_gpu<<<1, 248>>>(poly, offset+(1<<11)-2040, 1024, 1536, 1792);
-        // for(int i=offset+(1<<11)-1-1792;i>=offset+(1<<11)-2040;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792];
-        xor_gpu<<<1, 4>>>(poly, offset+(1<<11)-2044, 1024, 1536, 1792, 2040);
-        // for(int i=offset+(1<<11)-1-2040;i>=offset+(1<<11)-2044;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040];
-        xor_gpu<<<1, 2>>>(poly, offset+(1<<11)-2046, 1024, 1536, 1792, 2040, 2044);
-        // for(int i=offset+(1<<11)-1-2044;i>=offset+(1<<11)-2046;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<11)-2047, 1024, 1536, 1792, 2040, 2044, 2046);
-        // for(int i=offset+(1<<11)-1-2046;i>=offset+(1<<11)-2047;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<11)-2048, 1024, 1536, 1792, 2040, 2044, 2046, 2047);
-        // for(int i=offset+(1<<11)-1-2047;i>=offset+(1<<11)-2048;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 1024>>>(poly, offset-1024, 1024, 1536, 1792, 2040, 2044, 2046, 2047);
-        // for(int i=offset-1-0;i>=offset-1024;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 512>>>(poly, offset-1536, 1536, 1792, 2040, 2044, 2046, 2047);
-        // for(int i=offset-1-1024;i>=offset-1536;--i)poly[i]^=poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 256>>>(poly, offset-1792, 1792, 2040, 2044, 2046, 2047);
-        // for(int i=offset-1-1536;i>=offset-1792;--i)poly[i]^=poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 248>>>(poly, offset-2040, 2040, 2044, 2046, 2047);
-        // for(int i=offset-1-1792;i>=offset-2040;--i)poly[i]^=poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 4>>>(poly, offset-2044, 2044, 2046, 2047);
-        // for(int i=offset-1-2040;i>=offset-2044;--i)poly[i]^=poly[i+2044]^poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 2>>>(poly, offset-2046, 2046, 2047);
-        // for(int i=offset-1-2044;i>=offset-2046;--i)poly[i]^=poly[i+2046]^poly[i+2047];
-        xor_gpu<<<1, 1>>>(poly, offset-2047, 2047);
-        // for(int i=offset-1-2046;i>=offset-2047;--i)poly[i]^=poly[i+2047];
-    }
+    // for(int offset=(1<<11);offset<(1<<logn);offset+=(1<<(11+1))){
+    //     xor_gpu<<<1, 512>>>(poly, offset+(1<<11)-1536, 1024);
+    //     // for(int i=offset+(1<<11)-1-1024;i>=offset+(1<<11)-1536;--i)poly[i]^=poly[i+1024];
+    //     xor_gpu<<<1, 256>>>(poly, offset+(1<<11)-1792, 1024, 1536);
+    //     // for(int i=offset+(1<<11)-1-1536;i>=offset+(1<<11)-1792;--i)poly[i]^=poly[i+1024]^poly[i+1536];
+    //     xor_gpu<<<1, 248>>>(poly, offset+(1<<11)-2040, 1024, 1536, 1792);
+    //     // for(int i=offset+(1<<11)-1-1792;i>=offset+(1<<11)-2040;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792];
+    //     xor_gpu<<<1, 4>>>(poly, offset+(1<<11)-2044, 1024, 1536, 1792, 2040);
+    //     // for(int i=offset+(1<<11)-1-2040;i>=offset+(1<<11)-2044;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040];
+    //     xor_gpu<<<1, 2>>>(poly, offset+(1<<11)-2046, 1024, 1536, 1792, 2040, 2044);
+    //     // for(int i=offset+(1<<11)-1-2044;i>=offset+(1<<11)-2046;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<11)-2047, 1024, 1536, 1792, 2040, 2044, 2046);
+    //     // for(int i=offset+(1<<11)-1-2046;i>=offset+(1<<11)-2047;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<11)-2048, 1024, 1536, 1792, 2040, 2044, 2046, 2047);
+    //     // for(int i=offset+(1<<11)-1-2047;i>=offset+(1<<11)-2048;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 1024>>>(poly, offset-1024, 1024, 1536, 1792, 2040, 2044, 2046, 2047);
+    //     // for(int i=offset-1-0;i>=offset-1024;--i)poly[i]^=poly[i+1024]^poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 512>>>(poly, offset-1536, 1536, 1792, 2040, 2044, 2046, 2047);
+    //     // for(int i=offset-1-1024;i>=offset-1536;--i)poly[i]^=poly[i+1536]^poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 256>>>(poly, offset-1792, 1792, 2040, 2044, 2046, 2047);
+    //     // for(int i=offset-1-1536;i>=offset-1792;--i)poly[i]^=poly[i+1792]^poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 248>>>(poly, offset-2040, 2040, 2044, 2046, 2047);
+    //     // for(int i=offset-1-1792;i>=offset-2040;--i)poly[i]^=poly[i+2040]^poly[i+2044]^poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 4>>>(poly, offset-2044, 2044, 2046, 2047);
+    //     // for(int i=offset-1-2040;i>=offset-2044;--i)poly[i]^=poly[i+2044]^poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 2>>>(poly, offset-2046, 2046, 2047);
+    //     // for(int i=offset-1-2044;i>=offset-2046;--i)poly[i]^=poly[i+2046]^poly[i+2047];
+    //     xor_gpu<<<1, 1>>>(poly, offset-2047, 2047);
+    //     // for(int i=offset-1-2046;i>=offset-2047;--i)poly[i]^=poly[i+2047];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("5 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[5]);
 
-    for(int offset=(1<<10);offset<(1<<logn);offset+=(1<<(10+1))){
-        xor_gpu<<<1, 252>>>(poly, offset+(1<<10)-1020, 768);
-        // for(int i=offset+(1<<10)-1-768;i>=offset+(1<<10)-1020;--i)poly[i]^=poly[i+768];
-        xor_gpu<<<1, 3>>>(poly, offset+(1<<10)-1023, 768, 1020);
-        // for(int i=offset+(1<<10)-1-1020;i>=offset+(1<<10)-1023;--i)poly[i]^=poly[i+768]^poly[i+1020];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<10)-1024, 768, 1020, 1023);
-        // for(int i=offset+(1<<10)-1-1023;i>=offset+(1<<10)-1024;--i)poly[i]^=poly[i+768]^poly[i+1020]^poly[i+1023];
-        xor_gpu<<<1, 768>>>(poly, offset-768, 768, 1020, 1023);
-        // for(int i=offset-1-0;i>=offset-768;--i)poly[i]^=poly[i+768]^poly[i+1020]^poly[i+1023];
-        xor_gpu<<<1, 252>>>(poly, offset-1020, 1020, 1023);
-        // for(int i=offset-1-768;i>=offset-1020;--i)poly[i]^=poly[i+1020]^poly[i+1023];
-        xor_gpu<<<1, 3>>>(poly, offset-1023, 1023);
-        // for(int i=offset-1-1020;i>=offset-1023;--i)poly[i]^=poly[i+1023];
-    }
+    // for(int offset=(1<<10);offset<(1<<logn);offset+=(1<<(10+1))){
+    //     xor_gpu<<<1, 252>>>(poly, offset+(1<<10)-1020, 768);
+    //     // for(int i=offset+(1<<10)-1-768;i>=offset+(1<<10)-1020;--i)poly[i]^=poly[i+768];
+    //     xor_gpu<<<1, 3>>>(poly, offset+(1<<10)-1023, 768, 1020);
+    //     // for(int i=offset+(1<<10)-1-1020;i>=offset+(1<<10)-1023;--i)poly[i]^=poly[i+768]^poly[i+1020];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<10)-1024, 768, 1020, 1023);
+    //     // for(int i=offset+(1<<10)-1-1023;i>=offset+(1<<10)-1024;--i)poly[i]^=poly[i+768]^poly[i+1020]^poly[i+1023];
+    //     xor_gpu<<<1, 768>>>(poly, offset-768, 768, 1020, 1023);
+    //     // for(int i=offset-1-0;i>=offset-768;--i)poly[i]^=poly[i+768]^poly[i+1020]^poly[i+1023];
+    //     xor_gpu<<<1, 252>>>(poly, offset-1020, 1020, 1023);
+    //     // for(int i=offset-1-768;i>=offset-1020;--i)poly[i]^=poly[i+1020]^poly[i+1023];
+    //     xor_gpu<<<1, 3>>>(poly, offset-1023, 1023);
+    //     // for(int i=offset-1-1020;i>=offset-1023;--i)poly[i]^=poly[i+1023];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("6 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[6]);
 
-    for(int offset=(1<<9);offset<(1<<logn);offset+=(1<<(9+1))){
-        xor_gpu<<<1, 254>>>(poly, offset+(1<<9)-510, 256);
-        // for(int i=offset+(1<<9)-1-256;i>=offset+(1<<9)-510;--i)poly[i]^=poly[i+256];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<9)-511, 256, 510);
-        // for(int i=offset+(1<<9)-1-510;i>=offset+(1<<9)-511;--i)poly[i]^=poly[i+256]^poly[i+510];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<9)-512, 256, 510, 511);
-        // for(int i=offset+(1<<9)-1-511;i>=offset+(1<<9)-512;--i)poly[i]^=poly[i+256]^poly[i+510]^poly[i+511];
-        xor_gpu<<<1, 256>>>(poly, offset-256, 256, 510, 511);
-        // for(int i=offset-1-0;i>=offset-256;--i)poly[i]^=poly[i+256]^poly[i+510]^poly[i+511];
-        xor_gpu<<<1, 254>>>(poly, offset-510, 510, 511);
-        // for(int i=offset-1-256;i>=offset-510;--i)poly[i]^=poly[i+510]^poly[i+511];
-        xor_gpu<<<1, 1>>>(poly, offset-511, 511);
-        // for(int i=offset-1-510;i>=offset-511;--i)poly[i]^=poly[i+511];
-    }
+    // for(int offset=(1<<9);offset<(1<<logn);offset+=(1<<(9+1))){
+    //     xor_gpu<<<1, 254>>>(poly, offset+(1<<9)-510, 256);
+    //     // for(int i=offset+(1<<9)-1-256;i>=offset+(1<<9)-510;--i)poly[i]^=poly[i+256];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<9)-511, 256, 510);
+    //     // for(int i=offset+(1<<9)-1-510;i>=offset+(1<<9)-511;--i)poly[i]^=poly[i+256]^poly[i+510];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<9)-512, 256, 510, 511);
+    //     // for(int i=offset+(1<<9)-1-511;i>=offset+(1<<9)-512;--i)poly[i]^=poly[i+256]^poly[i+510]^poly[i+511];
+    //     xor_gpu<<<1, 256>>>(poly, offset-256, 256, 510, 511);
+    //     // for(int i=offset-1-0;i>=offset-256;--i)poly[i]^=poly[i+256]^poly[i+510]^poly[i+511];
+    //     xor_gpu<<<1, 254>>>(poly, offset-510, 510, 511);
+    //     // for(int i=offset-1-256;i>=offset-510;--i)poly[i]^=poly[i+510]^poly[i+511];
+    //     xor_gpu<<<1, 1>>>(poly, offset-511, 511);
+    //     // for(int i=offset-1-510;i>=offset-511;--i)poly[i]^=poly[i+511];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("7 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[7]);
 
-    for(int offset=(1<<8);offset<(1<<logn);offset+=(1<<(8+1))){
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<8)-256, 255);
-        // for(int i=offset+(1<<8)-1-255;i>=offset+(1<<8)-256;--i)poly[i]^=poly[i+255];
-        xor_gpu<<<1, 255>>>(poly, offset-255, 255);
-        // for(int i=offset-1-0;i>=offset-255;--i)poly[i]^=poly[i+255];
-    }
+    // for(int offset=(1<<8);offset<(1<<logn);offset+=(1<<(8+1))){
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<8)-256, 255);
+    //     // for(int i=offset+(1<<8)-1-255;i>=offset+(1<<8)-256;--i)poly[i]^=poly[i+255];
+    //     xor_gpu<<<1, 255>>>(poly, offset-255, 255);
+    //     // for(int i=offset-1-0;i>=offset-255;--i)poly[i]^=poly[i+255];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("8 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[8]);
 
-    for(int offset=(1<<7);offset<(1<<logn);offset+=(1<<(7+1))){
-        xor_gpu<<<1, 32>>>(poly, offset+(1<<7)-96, 64);
-        // for(int i=offset+(1<<7)-1-64;i>=offset+(1<<7)-96;--i)poly[i]^=poly[i+64];
-        xor_gpu<<<1, 16>>>(poly, offset+(1<<7)-112, 64, 96);
-        // for(int i=offset+(1<<7)-1-96;i>=offset+(1<<7)-112;--i)poly[i]^=poly[i+64]^poly[i+96];
-        xor_gpu<<<1, 8>>>(poly, offset+(1<<7)-120, 64, 96, 112);
-        // for(int i=offset+(1<<7)-1-112;i>=offset+(1<<7)-120;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112];
-        xor_gpu<<<1, 4>>>(poly, offset+(1<<7)-124, 64, 96, 112, 120);
-        // for(int i=offset+(1<<7)-1-120;i>=offset+(1<<7)-124;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120];
-        xor_gpu<<<1, 2>>>(poly, offset+(1<<7)-126, 64, 96, 112, 120, 124);
-        // for(int i=offset+(1<<7)-1-124;i>=offset+(1<<7)-126;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<7)-127, 64, 96, 112, 120, 124, 126);
-        // for(int i=offset+(1<<7)-1-126;i>=offset+(1<<7)-127;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<7)-128, 64, 96, 112, 120, 124, 126, 127);
-        // for(int i=offset+(1<<7)-1-127;i>=offset+(1<<7)-128;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 64>>>(poly, offset-64, 64, 96, 112, 120, 124, 126, 127);
-        // for(int i=offset-1-0;i>=offset-64;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 32>>>(poly, offset-96, 96, 112, 120, 124, 126, 127);
-        // for(int i=offset-1-64;i>=offset-96;--i)poly[i]^=poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 16>>>(poly, offset-112, 112, 120, 124, 126, 127);
-        // for(int i=offset-1-96;i>=offset-112;--i)poly[i]^=poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 8>>>(poly, offset-120, 120, 124, 126, 127);
-        // for(int i=offset-1-112;i>=offset-120;--i)poly[i]^=poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 4>>>(poly, offset-124, 124, 126, 127);
-        // for(int i=offset-1-120;i>=offset-124;--i)poly[i]^=poly[i+124]^poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 2>>>(poly, offset-126, 126, 127);
-        // for(int i=offset-1-124;i>=offset-126;--i)poly[i]^=poly[i+126]^poly[i+127];
-        xor_gpu<<<1, 1>>>(poly, offset-127, 127);
-        // for(int i=offset-1-126;i>=offset-127;--i)poly[i]^=poly[i+127];
-    }
+    // for(int offset=(1<<7);offset<(1<<logn);offset+=(1<<(7+1))){
+    //     xor_gpu<<<1, 32>>>(poly, offset+(1<<7)-96, 64);
+    //     // for(int i=offset+(1<<7)-1-64;i>=offset+(1<<7)-96;--i)poly[i]^=poly[i+64];
+    //     xor_gpu<<<1, 16>>>(poly, offset+(1<<7)-112, 64, 96);
+    //     // for(int i=offset+(1<<7)-1-96;i>=offset+(1<<7)-112;--i)poly[i]^=poly[i+64]^poly[i+96];
+    //     xor_gpu<<<1, 8>>>(poly, offset+(1<<7)-120, 64, 96, 112);
+    //     // for(int i=offset+(1<<7)-1-112;i>=offset+(1<<7)-120;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112];
+    //     xor_gpu<<<1, 4>>>(poly, offset+(1<<7)-124, 64, 96, 112, 120);
+    //     // for(int i=offset+(1<<7)-1-120;i>=offset+(1<<7)-124;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120];
+    //     xor_gpu<<<1, 2>>>(poly, offset+(1<<7)-126, 64, 96, 112, 120, 124);
+    //     // for(int i=offset+(1<<7)-1-124;i>=offset+(1<<7)-126;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<7)-127, 64, 96, 112, 120, 124, 126);
+    //     // for(int i=offset+(1<<7)-1-126;i>=offset+(1<<7)-127;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<7)-128, 64, 96, 112, 120, 124, 126, 127);
+    //     // for(int i=offset+(1<<7)-1-127;i>=offset+(1<<7)-128;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 64>>>(poly, offset-64, 64, 96, 112, 120, 124, 126, 127);
+    //     // for(int i=offset-1-0;i>=offset-64;--i)poly[i]^=poly[i+64]^poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 32>>>(poly, offset-96, 96, 112, 120, 124, 126, 127);
+    //     // for(int i=offset-1-64;i>=offset-96;--i)poly[i]^=poly[i+96]^poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 16>>>(poly, offset-112, 112, 120, 124, 126, 127);
+    //     // for(int i=offset-1-96;i>=offset-112;--i)poly[i]^=poly[i+112]^poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 8>>>(poly, offset-120, 120, 124, 126, 127);
+    //     // for(int i=offset-1-112;i>=offset-120;--i)poly[i]^=poly[i+120]^poly[i+124]^poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 4>>>(poly, offset-124, 124, 126, 127);
+    //     // for(int i=offset-1-120;i>=offset-124;--i)poly[i]^=poly[i+124]^poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 2>>>(poly, offset-126, 126, 127);
+    //     // for(int i=offset-1-124;i>=offset-126;--i)poly[i]^=poly[i+126]^poly[i+127];
+    //     xor_gpu<<<1, 1>>>(poly, offset-127, 127);
+    //     // for(int i=offset-1-126;i>=offset-127;--i)poly[i]^=poly[i+127];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("9 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[9]);
 
-    for(int offset=(1<<6);offset<(1<<logn);offset+=(1<<(6+1))){
-        xor_gpu<<<1, 12>>>(poly, offset+(1<<6)-60, 48);
-        // for(int i=offset+(1<<6)-1-48;i>=offset+(1<<6)-60;--i)poly[i]^=poly[i+48];
-        xor_gpu<<<1, 3>>>(poly, offset+(1<<6)-63, 48, 60);
-        // for(int i=offset+(1<<6)-1-60;i>=offset+(1<<6)-63;--i)poly[i]^=poly[i+48]^poly[i+60];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<6)-64, 48, 60, 63);
-        // for(int i=offset+(1<<6)-1-63;i>=offset+(1<<6)-64;--i)poly[i]^=poly[i+48]^poly[i+60]^poly[i+63];
-        xor_gpu<<<1, 48>>>(poly, offset-48, 48, 60, 63);
-        // for(int i=offset-1-0;i>=offset-48;--i)poly[i]^=poly[i+48]^poly[i+60]^poly[i+63];
-        xor_gpu<<<1, 12>>>(poly, offset-60, 60, 63);
-        // for(int i=offset-1-48;i>=offset-60;--i)poly[i]^=poly[i+60]^poly[i+63];
-        xor_gpu<<<1, 3>>>(poly, offset-63, 63);
-        // for(int i=offset-1-60;i>=offset-63;--i)poly[i]^=poly[i+63];
-    }
+    // for(int offset=(1<<6);offset<(1<<logn);offset+=(1<<(6+1))){
+    //     xor_gpu<<<1, 12>>>(poly, offset+(1<<6)-60, 48);
+    //     // for(int i=offset+(1<<6)-1-48;i>=offset+(1<<6)-60;--i)poly[i]^=poly[i+48];
+    //     xor_gpu<<<1, 3>>>(poly, offset+(1<<6)-63, 48, 60);
+    //     // for(int i=offset+(1<<6)-1-60;i>=offset+(1<<6)-63;--i)poly[i]^=poly[i+48]^poly[i+60];
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<6)-64, 48, 60, 63);
+    //     // for(int i=offset+(1<<6)-1-63;i>=offset+(1<<6)-64;--i)poly[i]^=poly[i+48]^poly[i+60]^poly[i+63];
+    //     xor_gpu<<<1, 48>>>(poly, offset-48, 48, 60, 63);
+    //     // for(int i=offset-1-0;i>=offset-48;--i)poly[i]^=poly[i+48]^poly[i+60]^poly[i+63];
+    //     xor_gpu<<<1, 12>>>(poly, offset-60, 60, 63);
+    //     // for(int i=offset-1-48;i>=offset-60;--i)poly[i]^=poly[i+60]^poly[i+63];
+    //     xor_gpu<<<1, 3>>>(poly, offset-63, 63);
+    //     // for(int i=offset-1-60;i>=offset-63;--i)poly[i]^=poly[i+63];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("10 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[10]);
 
-    for(int offset=(1<<5);offset<(1<<logn);offset+=(1<<(5+1))){
-        xor_gpu<<<1, 14>>>(poly, offset+(1<<5)-30, 16);
-        // for(int i=offset+(1<<5)-1-16;i>=offset+(1<<5)-30;--i)poly[i]^=poly[i+16];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<5)-31, 16, 30);
-        // for(int i=offset+(1<<5)-1-30;i>=offset+(1<<5)-31;--i)poly[i]^=poly[i+16]^poly[i+30];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<5)-32, 16, 30, 31);
-        // for(int i=offset+(1<<5)-1-31;i>=offset+(1<<5)-32;--i)poly[i]^=poly[i+16]^poly[i+30]^poly[i+31];
-        xor_gpu<<<1, 16>>>(poly, offset-16, 16, 30, 31);
-        // for(int i=offset-1-0;i>=offset-16;--i)poly[i]^=poly[i+16]^poly[i+30]^poly[i+31];
-        xor_gpu<<<1, 14>>>(poly, offset-30, 30, 31);
-        // for(int i=offset-1-16;i>=offset-30;--i)poly[i]^=poly[i+30]^poly[i+31];
-        xor_gpu<<<1, 1>>>(poly, offset-31, 31);
-        // for(int i=offset-1-30;i>=offset-31;--i)poly[i]^=poly[i+31];
-    }
+    // nBlock = dim3(14, ((1<<logn)-(1<<5))/(1<<6)/1024);
+    // nThread = dim3(1, 1024);
+    // xor_gpu_flat<<<1, 14>>>(poly, (1<<5)-30, 1<<5, 1<<6, 16);
+    // nBlock.x = 1;
+    // xor_gpu_flat<<<1, 14>>>(poly, (1<<5)-31, 1<<5, 1<<6, 16, 30);
+    // xor_gpu_flat<<<1, 14>>>(poly, (1<<5)-32, 1<<5, 1<<6, 16, 30, 31);
+    // nBlock.x = 16;
+    // xor_gpu_flat<<<1, 14>>>(poly, -16, 1<<5, 1<<6, 16, 30, 31);
+    // nBlock.x = 14;
+    // xor_gpu_flat<<<1, 14>>>(poly, -30, 1<<5, 1<<6, 30, 31);
+    // nBlock.x = 1;
+    // xor_gpu_flat<<<1, 14>>>(poly, -31, 1<<5, 1<<6, 31);
 
-    for(int offset=(1<<4);offset<(1<<logn);offset+=(1<<(4+1))){
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<4)-16, 15);
-        // for(int i=offset+(1<<4)-1-15;i>=offset+(1<<4)-16;--i)poly[i]^=poly[i+15];
-        xor_gpu<<<1, 15>>>(poly, offset-15, 15);
-        // for(int i=offset-1-0;i>=offset-15;--i)poly[i]^=poly[i+15];
-    }
+    // // for(int offset=(1<<5);offset<(1<<logn);offset+=(1<<(5+1))){
+    //     // for(int i=offset+(1<<5)-1-16;i>=offset+(1<<5)-30;--i)poly[i]^=poly[i+16];
+    //     // for(int i=offset+(1<<5)-1-30;i>=offset+(1<<5)-31;--i)poly[i]^=poly[i+16]^poly[i+30];
+    //     // for(int i=offset+(1<<5)-1-31;i>=offset+(1<<5)-32;--i)poly[i]^=poly[i+16]^poly[i+30]^poly[i+31];
+    //     // for(int i=offset-1-0;i>=offset-16;--i)poly[i]^=poly[i+16]^poly[i+30]^poly[i+31];
+    //     // for(int i=offset-1-16;i>=offset-30;--i)poly[i]^=poly[i+30]^poly[i+31];
+    //     // for(int i=offset-1-30;i>=offset-31;--i)poly[i]^=poly[i+31];
+    // // }
+    // err = cudaDeviceSynchronize();
+    // printf("11 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[11]);
 
-    for(int offset=(1<<3);offset<(1<<logn);offset+=(1<<(3+1))){
-        xor_gpu<<<1, 2>>>(poly, offset+(1<<3)-6, 4);
-        // for(int i=offset+(1<<3)-1-4;i>=offset+(1<<3)-6;--i)poly[i]^=poly[i+4];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<3)-7, 4, 6);
-        // for(int i=offset+(1<<3)-1-6;i>=offset+(1<<3)-7;--i)poly[i]^=poly[i+4]^poly[i+6];
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<3)-8, 4, 6, 7);
-        // for(int i=offset+(1<<3)-1-7;i>=offset+(1<<3)-8;--i)poly[i]^=poly[i+4]^poly[i+6]^poly[i+7];
-        xor_gpu<<<1, 4>>>(poly, offset-4, 4, 6, 7);
-        // for(int i=offset-1-0;i>=offset-4;--i)poly[i]^=poly[i+4]^poly[i+6]^poly[i+7];
-        xor_gpu<<<1, 2>>>(poly, offset-6, 6, 7);
-        // for(int i=offset-1-4;i>=offset-6;--i)poly[i]^=poly[i+6]^poly[i+7];
-        xor_gpu<<<1, 1>>>(poly, offset-7, 7);
-        // for(int i=offset-1-6;i>=offset-7;--i)poly[i]^=poly[i+7];
-    }
+    // for(int offset=(1<<4);offset<(1<<logn);offset+=(1<<(4+1))){
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<4)-16, 15);
+    //     // for(int i=offset+(1<<4)-1-15;i>=offset+(1<<4)-16;--i)poly[i]^=poly[i+15];
+    //     xor_gpu<<<1, 15>>>(poly, offset-15, 15);
+    //     // for(int i=offset-1-0;i>=offset-15;--i)poly[i]^=poly[i+15];
+    // }
+    err = cudaDeviceSynchronize();
+    printf("12 : %s\n", cudaGetErrorString(err));
+    clock_gettime(CLOCK_MONOTONIC, &t[12]);
 
-    for(int offset=(1<<2);offset<(1<<logn);offset+=(1<<(2+1))){
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<2)-4, 3);
-        // for(int i=offset+(1<<2)-1-3;i>=offset+(1<<2)-4;--i)poly[i]^=poly[i+3];
-        xor_gpu<<<1, 3>>>(poly, offset-3, 3);
-        // for(int i=offset-1-0;i>=offset-3;--i)poly[i]^=poly[i+3];
-    }
+    nBlock = dim3(2, (((1<<logn)-(1<<3)-1)/(1<<4)+1)/1024);
+    nThread = dim3(1, 1024);
+    xor_gpu_flat<<<nBlock, nThread>>>(poly, (1<<3)-6, 1<<3, 1<<4, 4);
+    err = cudaDeviceSynchronize();
+    printf("13a : %s\n", cudaGetErrorString(err));
+    nBlock.x = 1;
+    xor_gpu_flat<<<nBlock, nThread>>>(poly, (1<<3)-7, 1<<3, 1<<4, 4, 6);
+    err = cudaDeviceSynchronize();
+    printf("13b : %s\n", cudaGetErrorString(err));
+    xor_gpu_flat<<<nBlock, nThread>>>(poly, (1<<3)-8, 1<<3, 1<<4, 4, 6, 7);
+    err = cudaDeviceSynchronize();
+    printf("13c : %s\n", cudaGetErrorString(err));
 
-    for(int offset=(1<<1);offset<(1<<logn);offset+=(1<<(1+1))){
-        xor_gpu<<<1, 1>>>(poly, offset+(1<<1)-2, 1);
-        // for(int i=offset+(1<<1)-1-1;i>=offset+(1<<1)-2;--i)poly[i]^=poly[i+1];
-        xor_gpu<<<1, 1>>>(poly, offset-1, 1);
-        // for(int i=offset-1-0;i>=offset-1;--i)poly[i]^=poly[i+1];
-    }
+    err = cudaDeviceSynchronize();
+    printf("13d : %s\n", cudaGetErrorString(err));
 
+    nBlock.x = 4;
+    xor_gpu_flat<<<nBlock, nThread>>>(poly, -4, 1<<3, 1<<4, 4, 6, 7);
+    err = cudaDeviceSynchronize();
+    printf("13e : %s\n", cudaGetErrorString(err));
+    nBlock.x = 2;
+    xor_gpu_flat<<<nBlock, nThread>>>(poly, -6, 1<<3, 1<<4, 6, 7);
+    err = cudaDeviceSynchronize();
+    printf("13f : %s\n", cudaGetErrorString(err));
+    nBlock.x = 1;
+    xor_gpu_flat<<<nBlock, nThread>>>(poly, -7, 1<<3, 1<<4, 7);
+
+    // printf("actual loop count: %d\n", ((1<<logn)-(1<<3))/(1<<(3+1)));
+    // for(int offset=(1<<3);offset<(1<<logn);offset+=(1<<(3+1))) {
+    //     for(int i=offset+(1<<3)-1-4;i>=offset+(1<<3)-6;--i)poly[i]^=poly[i+4];
+    //     for(int i=offset+(1<<3)-1-6;i>=offset+(1<<3)-7;--i)poly[i]^=poly[i+4]^poly[i+6];
+    //     for(int i=offset+(1<<3)-1-7;i>=offset+(1<<3)-8;--i)poly[i]^=poly[i+4]^poly[i+6]^poly[i+7];
+    //     for(int i=offset-1-0;i>=offset-4;--i)poly[i]^=poly[i+4]^poly[i+6]^poly[i+7];
+    //     for(int i=offset-1-4;i>=offset-6;--i)poly[i]^=poly[i+6]^poly[i+7];
+    //     for(int i=offset-1-6;i>=offset-7;--i)poly[i]^=poly[i+7];
+    // }
+
+    err = cudaDeviceSynchronize();
+    printf("13g : %s\n", cudaGetErrorString(err));
+    clock_gettime(CLOCK_MONOTONIC, &t[13]);
+
+    // for(int offset=(1<<2);offset<(1<<logn);offset+=(1<<(2+1))){
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<2)-4, 3);
+    //     // for(int i=offset+(1<<2)-1-3;i>=offset+(1<<2)-4;--i)poly[i]^=poly[i+3];
+    //     xor_gpu<<<1, 3>>>(poly, offset-3, 3);
+    //     // for(int i=offset-1-0;i>=offset-3;--i)poly[i]^=poly[i+3];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("14 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[14]);
+
+    // for(int offset=(1<<1);offset<(1<<logn);offset+=(1<<(1+1))){
+    //     xor_gpu<<<1, 1>>>(poly, offset+(1<<1)-2, 1);
+    //     // for(int i=offset+(1<<1)-1-1;i>=offset+(1<<1)-2;--i)poly[i]^=poly[i+1];
+    //     xor_gpu<<<1, 1>>>(poly, offset-1, 1);
+    //     // for(int i=offset-1-0;i>=offset-1;--i)poly[i]^=poly[i+1];
+    // }
+    // err = cudaDeviceSynchronize();
+    // printf("15 : %s\n", cudaGetErrorString(err));
+    // clock_gettime(CLOCK_MONOTONIC, &t[15]);
+
+    for (int i = 12; i < 13; i++) {
+        float timeSinceStart = (t[i+1].tv_sec - t[i].tv_sec) * 1000;
+        timeSinceStart += (t[i+1].tv_nsec - t[i].tv_nsec) / 1000000.0;
+        printf("Loop %d: %.2f ms\n", i, timeSinceStart);
+    }
 }

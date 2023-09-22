@@ -17,6 +17,8 @@ You should have received a copy of the GNU Lesser General Public License
 along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "util.cuh"
+
 __global__
 void bc_to_mono_256_16_a(u256* poly) {
     uint64_t offset = 2 + 4 * (blockIdx.x * blockDim.x + threadIdx.x);

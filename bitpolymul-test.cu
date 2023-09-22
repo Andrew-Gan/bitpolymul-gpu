@@ -6,6 +6,8 @@
 #include "byte_inline_func.h"
 
 #include "bitpolymul.h"
+#include "cuda_runtime.h"
+#include <cassert>
 
 #include "config_profile.h"
 
@@ -73,9 +75,27 @@ extern struct benchmark bm_ibutterfly;
 
 #define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
 
+void test_cuda() {
+  int deviceCount = 0;
+  cudaGetDeviceCount(&deviceCount);
+  assert(deviceCount >= 1);
+
+  int dev;
+  for (dev = 0; dev < deviceCount; ++dev) {
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+    if (deviceProp.major >= 1)
+      break;
+  }
+  if (dev == deviceCount)
+    fprintf(stderr, "There is no device supporting CUDA.\n");
+  assert(dev < deviceCount);
+}
+
 int main( int argc , char ** argv )
 {
 	//unsigned char seed[32] = {0};
+	test_cuda();
 
 	unsigned log2_len = LOG2(LEN);
 	if( log2_len == LOG2(LEN-1) ) log2_len++;
@@ -138,6 +158,7 @@ bm_init(&bm_ich);
 //	poly2[0] = 2;
 //	poly2[1] = 2;
 	//memcpy( poly2 , poly1 , LEN*sizeof(uint64_t) );
+
 	for(unsigned q=0;q<len;q++) { poly1[q] = rand(); poly1[q]<<=32; poly1[q] |= rand(); }
 	for(unsigned q=0;q<len;q++) { poly2[q] = rand(); poly2[q]<<=32; poly2[q] |= rand(); }
 	bm_func1( poly5 , poly2 , poly1 , len );
@@ -152,6 +173,8 @@ bm_init(&bm_ich);
 			printf("diff:"); u64_fdump(stdout,poly5,len*2); puts("");
 		}
 	}
+
+	return 0; //debug
 
 	for(unsigned q=0;q<len;q++) { poly1[q] = rand(); poly1[q]<<=32; poly1[q] |= rand(); }
 	for(unsigned q=0;q<len;q++) { poly2[q] = rand(); poly2[q]<<=32; poly2[q] |= rand(); }
