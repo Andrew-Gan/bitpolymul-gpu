@@ -893,21 +893,26 @@ void bc_to_lch_256_16(u256* poly, int logn){
 
     // mem acc err started with first kernel call
     err = cudaDeviceSynchronize();
+
+    cudaStream_t s[6];
+    for (cudaStream_t &si : s) {
+        cudaStreamCreate(&si);
+    }
     printf("12 : %s\n", cudaGetErrorString(err));
     clock_gettime(CLOCK_MONOTONIC, &t[12]);
 
     nBlock = dim3(2, (((1<<logn)-(1<<3)-1)/(1<<4)+1)/1024);
     nThread = dim3(1, 1024);
-    xor_gpu_flat<<<nBlock, nThread>>>(poly, (1<<3)-6, 1<<3, 1<<4, 4);
+    xor_gpu_flat<<<nBlock, nThread, 0, s[0]>>>(poly, (1<<3)-6, 1<<3, 1<<4, 4);
     nBlock.x = 1;
-    xor_gpu_flat<<<nBlock, nThread>>>(poly, (1<<3)-7, 1<<3, 1<<4, 4, 6);
-    xor_gpu_flat<<<nBlock, nThread>>>(poly, (1<<3)-8, 1<<3, 1<<4, 4, 6, 7);
+    xor_gpu_flat<<<nBlock, nThread, 0, s[1]>>>(poly, (1<<3)-7, 1<<3, 1<<4, 4, 6);
+    xor_gpu_flat<<<nBlock, nThread, 0, s[2]>>>(poly, (1<<3)-8, 1<<3, 1<<4, 4, 6, 7);
     nBlock.x = 4;
-    xor_gpu_flat<<<nBlock, nThread>>>(poly, -4, 1<<3, 1<<4, 4, 6, 7);
+    xor_gpu_flat<<<nBlock, nThread, 0, s[3]>>>(poly, -4, 1<<3, 1<<4, 4, 6, 7);
     nBlock.x = 2;
-    xor_gpu_flat<<<nBlock, nThread>>>(poly, -6, 1<<3, 1<<4, 6, 7);
+    xor_gpu_flat<<<nBlock, nThread, 0, s[4]>>>(poly, -6, 1<<3, 1<<4, 6, 7);
     nBlock.x = 1;
-    xor_gpu_flat<<<nBlock, nThread>>>(poly, -7, 1<<3, 1<<4, 7);
+    xor_gpu_flat<<<nBlock, nThread, 0, s[5]>>>(poly, -7, 1<<3, 1<<4, 7);
 
     // printf("actual loop count: %d\n", ((1<<logn)-(1<<3))/(1<<(3+1)));
     // for(int offset=(1<<3);offset<(1<<logn);offset+=(1<<(3+1))) {
@@ -920,8 +925,8 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // }
 
     err = cudaDeviceSynchronize();
-    printf("13g : %s\n", cudaGetErrorString(err));
     clock_gettime(CLOCK_MONOTONIC, &t[13]);
+    printf("13g : %s\n", cudaGetErrorString(err));
 
     // for(int offset=(1<<2);offset<(1<<logn);offset+=(1<<(2+1))){
     //     xor_gpu<<<1, 1>>>(poly, offset+(1<<2)-4, 3);

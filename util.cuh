@@ -8,32 +8,49 @@
 class u256 {
 private:
     const size_t size = 32;
-    uint64_t data[4];
+    ulong4 data;
 
 public:
     __host__ __device__ u256() {
-        memset(data, 0, size);
+        data.x = 0;
+        data.y = 0;
+        data.z = 0;
+        data.w = 0;
     }
 
     __device__ u256(uint64_t a, uint64_t b, uint64_t c, uint64_t d) {
-        data[0] = a;
-        data[1] = b;
-        data[2] = c;
-        data[3] = d;
+        data.x = a;
+        data.y = b;
+        data.z = c;
+        data.w = d;
     }
 
+    __device__ u256(ulong4 _data) : data(_data) {}
+
     __device__ u256 operator^(const u256 rhs) const {
-        u256 res;
-        for (int i = 0; i < 4; i++) {
-            res.data[i] = data[i] ^ rhs.data[i];
-        }
+        ulong4 res;
+        asm (
+            "xor.b64     %0, %4, %8;\n\t"
+            "xor.b64     %1, %5, %9;\n\t"
+            "xor.b64     %2, %6, %10;\n\t"
+            "xor.b64     %3, %7, %11;\n\t"
+            : "=l"(res.x), "=l"(res.y), "=l"(res.z), "=l"(res.w)
+            : "l"(data.x), "l"(data.y), "l"(data.z), "l"(data.w),
+            "l"(rhs.data.x), "l"(rhs.data.y), "l"(rhs.data.z), "l"(rhs.data.w)
+        );
         return res;
     }
 
     __device__ u256& operator^=(const u256 rhs) {
-        for (int i = 0; i < 4; i++) {
-            data[i] ^= rhs.data[i];
-        }
+        asm (
+            "xor.b64     %0, %4, %8;\n\t"
+            "xor.b64     %1, %5, %9;\n\t"
+            "xor.b64     %2, %6, %10;\n\t"
+            "xor.b64     %3, %7, %11;\n\t"
+            : "=l"(data.x), "=l"(data.y), "=l"(data.z), "=l"(data.w)
+            : "l"(data.x), "l"(data.y), "l"(data.z), "l"(data.w),
+            "l"(rhs.data.x), "l"(rhs.data.y), "l"(rhs.data.z), "l"(rhs.data.w)
+        );
         return *this;
     }
 
@@ -42,9 +59,9 @@ public:
     __device__
     u256 slli(int n) const {
         u256 res;
-        T *castedData = (T*) res.data;
+        T *castedData = (T*) &res.data;
         for (int i = 0; i < size / sizeof(T); i++) {
-            castedData[i] = ((T*)data)[i] << n;
+            castedData[i] = ((T*)&data)[i] << n;
         }
         return res;
     }
@@ -54,9 +71,9 @@ public:
     __device__
     u256 srli(int n) const {
         u256 res;
-        T *castedData = (T*) res.data;
+        T *castedData = (T*) &res.data;
         for (int i = 0; i < size / sizeof(T); i++) {
-            castedData[i] = ((T*)data)[i] >> n;
+            castedData[i] = ((T*)&data)[i] >> n;
         }
         return res;
     }
@@ -65,39 +82,41 @@ public:
     __device__ u256 permute2x128(u256 b, uint8_t control) {
         u256 res;
         switch (control >> 4) {
-            case 0b1000: res.data[2] = data[0]; res.data[3] = data[1];
-            case 0b0100: res.data[2] = data[2]; res.data[3] = data[3];
-            case 0b0010: res.data[2] = b.data[0]; res.data[3] = b.data[1];
-            case 0b0001: res.data[2] = b.data[2]; res.data[3] = b.data[3];
+            case 0b1000: res.data.z = data.x; res.data.w = data.y;
+            case 0b0100: res.data.z = data.z; res.data.w = data.w;
+            case 0b0010: res.data.z = b.data.x; res.data.w = b.data.y;
+            case 0b0001: res.data.z = b.data.z; res.data.w = b.data.w;
         }
         switch ((control & 0b1111)) {
-            case 0b1000: res.data[0] = data[0]; res.data[1] = data[1];
-            case 0b0100: res.data[0] = data[2]; res.data[1] = data[3];
-            case 0b0010: res.data[0] = b.data[0]; res.data[1] = b.data[1];
-            case 0b0001: res.data[0] = b.data[2]; res.data[1] = b.data[3];
+            case 0b1000: res.data.x = data.x; res.data.y = data.y;
+            case 0b0100: res.data.x = data.z; res.data.y = data.w;
+            case 0b0010: res.data.x = b.data.x; res.data.y = b.data.y;
+            case 0b0001: res.data.x = b.data.z; res.data.y = b.data.w;
         }
         return res;
     }
 
     // implements: _mm256_alignr_epi8
     __device__ u256 alignr(u256 b, uint8_t mask) {
-        u256 res;
+        ulong4 res;
 
         int offs = 0;
         int n = mask*8;
         if (n > 64) offs++;
         if (n > 128) offs++;
 
-        u256 joint0(b.data[0], b.data[1], data[0], data[1]);
-        u256 joint1(b.data[2], b.data[3], data[2], data[3]);
+        u256 joint0(b.data.x, b.data.y, data.x, data.y);
+        u256 joint1(b.data.z, b.data.w, data.z, data.w);
+        uint64_t *joint0Data = (uint64_t*)&joint0.data;
+        uint64_t *joint1Data = (uint64_t*)&joint1.data;
 
         for (int i = 0; i < 2; i++) {
-            res.data[i] |= joint0.data[i+offs] >> n;
-            res.data[i] |= joint0.data[i+offs+1] << (64-n);
+            ((uint64_t *)&res)[i] |= joint0Data[i+offs] >> n;
+            ((uint64_t *)&res)[i] |= joint0Data[i+offs+1] << (64-n);
         }
         for (int i = 0; i < 2; i++) {
-            res.data[i+2] |= joint1.data[i+offs] >> n;
-            res.data[i+2] |= joint1.data[i+offs+1] << (64-n);
+            ((uint64_t *)&res)[i+2] |= joint1Data[i+offs] >> n;
+            ((uint64_t *)&res)[i+2] |= joint1Data[i+offs+1] << (64-n);
         }
         return res;
     }
