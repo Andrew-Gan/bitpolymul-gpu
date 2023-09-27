@@ -27,6 +27,10 @@ public:
 
     __device__ u256(ulong4 _data) : data(_data) {}
 
+    __device__ u256(const u256 &other) {
+        *this = other;
+    }
+
     __device__ u256 operator^(const u256 rhs) const {
         ulong4 res;
         asm (
@@ -41,16 +45,13 @@ public:
         return res;
     }
 
+    __device__ u256& operator=(const u256 rhs) {
+        data = rhs.data;
+        return *this;
+    }
+
     __device__ u256& operator^=(const u256 rhs) {
-        asm (
-            "xor.b64     %0, %4, %8;\n\t"
-            "xor.b64     %1, %5, %9;\n\t"
-            "xor.b64     %2, %6, %10;\n\t"
-            "xor.b64     %3, %7, %11;\n\t"
-            : "=l"(data.x), "=l"(data.y), "=l"(data.z), "=l"(data.w)
-            : "l"(data.x), "l"(data.y), "l"(data.z), "l"(data.w),
-            "l"(rhs.data.x), "l"(rhs.data.y), "l"(rhs.data.z), "l"(rhs.data.w)
-        );
+        *this = *this ^ rhs;
         return *this;
     }
 
@@ -122,20 +123,21 @@ public:
     }
 };
 
-template <typename... Arguments>
-__global__
-void xor_gpu(u256* poly, int base, Arguments... offsets) {
-    int i = base + blockIdx.x * blockDim.x + threadIdx.x;
-    for (const int offset : {offsets...}) {
-        poly[i] ^= poly[i + offset];
-    }
-}
+// template <typename... Arguments>
+// __global__
+// void xor_gpu(u256* poly, int base, Arguments... offsets) {
+//     int i = base + blockIdx.x * blockDim.x + threadIdx.x;
+//     for (const int offset : {offsets...}) {
+//         poly[i] ^= poly[i + offset];
+//     }
+// }
 
 template <typename... Arguments>
 __global__
-void xor_gpu_flat(u256* poly, int iBase, int offset, int offsetStride, Arguments... indices) {
+void xor_gpu(u256* poly, int iBase, int offset, int offsetStride, Arguments... indices) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
+
     int currOffs = offset + y * offsetStride;
     int i = iBase + currOffs + x;
     for (const int index : {indices...}) {
