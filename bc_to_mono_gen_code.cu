@@ -21,9 +21,10 @@ along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 
 __global__
 void bc_to_mono_256_16_a(u256* poly) {
-    uint64_t offset = 2 + 4 * (blockIdx.x * blockDim.x + threadIdx.x);
-    poly[offset-1]^=poly[offset];
-    poly[offset]^=poly[offset+1];
+    uint64_t x = blockIdx.x * blockDim.x + threadIdx.x;
+    uint64_t offset = 4 * x + 2;
+    poly[offset-1] = u256_xor(poly[offset-1], poly[offset]);
+    poly[offset] = u256_xor(poly[offset], poly[offset+1]);
 }
 
 void bc_to_mono_256_16(u256* poly, int logn) {

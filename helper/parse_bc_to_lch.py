@@ -9,7 +9,7 @@ tmp = re.findall(r'-?\d+', line)
 numbers = list(map(int, tmp))
 outIdxStart = numbers[1]
 outIdxStep = numbers[4] + numbers[5]
-outIterCountStr = '((1<<logn)-(1<<{}))/(1<<{})'.format(outIdxStart, outIdxStep)
+outIterCountStr = '((1<<logn)-(1<<{})+(1<<{})-1)/(1<<{})'.format(outIdxStart, outIdxStep, outIdxStep)
 fpo.write('blockY = ' + outIterCountStr + ';\n')
 
 # inner loops

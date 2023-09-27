@@ -20,6 +20,7 @@ along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 #include "util.cuh"
 
 int blockY = 0;
+cudaStream_t s[16];
 
 void bc_to_lch_256_30_12(u256* poly, int logn) {
     // for(int offset=(1<<30);offset<(1<<logn);offset+=(1<<(30+1))){
@@ -322,7 +323,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("0 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[0]);
 
-    blockY = ((1<<logn)-(1<<15))/(1<<16);
+    blockY = ((1<<logn)-(1<<15)+(1<<16)-1)/(1<<16);
     xor_gpu<<<dim3(8, blockY), 1024>>>(poly, (1<<15)-24576, 1<<15, 1<<16, 16384);
     xor_gpu<<<dim3(4, blockY), 1024>>>(poly, (1<<15)-28672, 1<<15, 1<<16, 16384, 24576);
     xor_gpu<<<dim3(2, blockY), 1024>>>(poly, (1<<15)-30720, 1<<15, 1<<16, 16384, 24576, 28672);
@@ -353,6 +354,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     xor_gpu<<<dim3(1, blockY), 4>>>(poly, -32764, 1<<15, 1<<16, 32764, 32766, 32767);
     xor_gpu<<<dim3(1, blockY), 2>>>(poly, -32766, 1<<15, 1<<16, 32766, 32767);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, -32767, 1<<15, 1<<16, 32767);
+
     // for(int offset=(1<<15);offset<(1<<logn);offset+=(1<<(15+1))){
     //     for(int i=offset+(1<<15)-1-16384;i>=offset+(1<<15)-24576;--i)poly[i]^=poly[i+16384];
     //     for(int i=offset+(1<<15)-1-24576;i>=offset+(1<<15)-28672;--i)poly[i]^=poly[i+16384]^poly[i+24576];
@@ -388,8 +390,8 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // err = cudaDeviceSynchronize();
     // printf("1 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[1]);
-
-    blockY = ((1<<logn)-(1<<14))/(1<<15);
+    
+    blockY = ((1<<logn)-(1<<14)+(1<<15)-1)/(1<<15);
     xor_gpu<<<dim3(3, blockY), 1024>>>(poly, (1<<14)-15360, 1<<14, 1<<15, 12288);
     xor_gpu<<<dim3(1, blockY), 768>>>(poly, (1<<14)-16128, 1<<14, 1<<15, 12288, 15360);
     xor_gpu<<<dim3(1, blockY), 192>>>(poly, (1<<14)-16320, 1<<14, 1<<15, 12288, 15360, 16128);
@@ -400,7 +402,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     xor_gpu<<<dim3(12, blockY), 1024>>>(poly, -12288, 1<<14, 1<<15, 12288, 15360, 16128, 16320, 16368, 16380, 16383);
     xor_gpu<<<dim3(3, blockY), 1024>>>(poly, -15360, 1<<14, 1<<15, 15360, 16128, 16320, 16368, 16380, 16383);
     xor_gpu<<<dim3(1, blockY), 768>>>(poly, -16128, 1<<14, 1<<15, 16128, 16320, 16368, 16380, 16383);
-    xor_gpu<<<dim3(1, blockY), 0>>>(poly, -16128, 1<<14, 1<<15, 16320, 16368, 16380, 16383);
+    xor_gpu<<<dim3(1, blockY), 192>>>(poly, -16320, 1<<14, 1<<15, 16320, 16368, 16380, 16383);
     xor_gpu<<<dim3(1, blockY), 48>>>(poly, -16368, 1<<14, 1<<15, 16368, 16380, 16383);
     xor_gpu<<<dim3(1, blockY), 12>>>(poly, -16380, 1<<14, 1<<15, 16380, 16383);
     xor_gpu<<<dim3(1, blockY), 3>>>(poly, -16383, 1<<14, 1<<15, 16383);
@@ -416,7 +418,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     //     for(int i=offset-1-0;i>=offset-12288;--i)poly[i]^=poly[i+12288]^poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
     //     for(int i=offset-1-12288;i>=offset-15360;--i)poly[i]^=poly[i+15360]^poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
     //     for(int i=offset-1-15360;i>=offset-16128;--i)poly[i]^=poly[i+16128]^poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
-    //     for(int i=offset-1-16128;i>=offset-16128;--i)poly[i]^=poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
+    //     for(int i=offset-1-16128;i>=offset-16320;--i)poly[i]^=poly[i+16320]^poly[i+16368]^poly[i+16380]^poly[i+16383];
     //     for(int i=offset-1-16320;i>=offset-16368;--i)poly[i]^=poly[i+16368]^poly[i+16380]^poly[i+16383];
     //     for(int i=offset-1-16368;i>=offset-16380;--i)poly[i]^=poly[i+16380]^poly[i+16383];
     //     for(int i=offset-1-16380;i>=offset-16383;--i)poly[i]^=poly[i+16383];
@@ -425,7 +427,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("2 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[2]);
 
-    blockY = ((1<<logn)-(1<<13))/(1<<14);
+    blockY = ((1<<logn)-(1<<13)+(1<<14)-1)/(1<<14);
     xor_gpu<<<dim3(7, blockY), 512>>>(poly, (1<<13)-7680, 1<<13, 1<<14, 4096);
     xor_gpu<<<dim3(1, blockY), 256>>>(poly, (1<<13)-7936, 1<<13, 1<<14, 4096, 7680);
     xor_gpu<<<dim3(1, blockY), 224>>>(poly, (1<<13)-8160, 1<<13, 1<<14, 4096, 7680, 7936);
@@ -461,7 +463,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("3 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[3]);
 
-    blockY = ((1<<logn)-(1<<12))/(1<<13);
+    blockY = ((1<<logn)-(1<<12)+(1<<13)-1)/(1<<13);
     xor_gpu<<<dim3(1, blockY), 240>>>(poly, (1<<12)-4080, 1<<12, 1<<13, 3840);
     xor_gpu<<<dim3(1, blockY), 15>>>(poly, (1<<12)-4095, 1<<12, 1<<13, 3840, 4080);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<12)-4096, 1<<12, 1<<13, 3840, 4080, 4095);
@@ -481,7 +483,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("4 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[4]);
 
-    blockY = ((1<<logn)-(1<<11))/(1<<12);
+    blockY = ((1<<logn)-(1<<11)+(1<<12)-1)/(1<<12);
     xor_gpu<<<dim3(1, blockY), 512>>>(poly, (1<<11)-1536, 1<<11, 1<<12, 1024);
     xor_gpu<<<dim3(1, blockY), 256>>>(poly, (1<<11)-1792, 1<<11, 1<<12, 1024, 1536);
     xor_gpu<<<dim3(1, blockY), 248>>>(poly, (1<<11)-2040, 1<<11, 1<<12, 1024, 1536, 1792);
@@ -515,7 +517,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("5 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[5]);
 
-    blockY = ((1<<logn)-(1<<10))/(1<<11);
+    blockY = ((1<<logn)-(1<<10)+(1<<11)-1)/(1<<11);
     xor_gpu<<<dim3(1, blockY), 252>>>(poly, (1<<10)-1020, 1<<10, 1<<11, 768);
     xor_gpu<<<dim3(1, blockY), 3>>>(poly, (1<<10)-1023, 1<<10, 1<<11, 768, 1020);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<10)-1024, 1<<10, 1<<11, 768, 1020, 1023);
@@ -535,7 +537,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("6 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[6]);
 
-    blockY = ((1<<logn)-(1<<9))/(1<<10);
+    blockY = ((1<<logn)-(1<<9)+(1<<10)-1)/(1<<10);
     xor_gpu<<<dim3(1, blockY), 254>>>(poly, (1<<9)-510, 1<<9, 1<<10, 256);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<9)-511, 1<<9, 1<<10, 256, 510);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<9)-512, 1<<9, 1<<10, 256, 510, 511);
@@ -555,7 +557,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("7 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[7]);
 
-    blockY = ((1<<logn)-(1<<8))/(1<<9);
+    blockY = ((1<<logn)-(1<<8)+(1<<9)-1)/(1<<9);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<8)-256, 1<<8, 1<<9, 255);
     xor_gpu<<<dim3(1, blockY), 255>>>(poly, -255, 1<<8, 1<<9, 255);
 
@@ -567,7 +569,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("8 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[8]);
 
-    blockY = ((1<<logn)-(1<<7))/(1<<8);
+    blockY = ((1<<logn)-(1<<7)+(1<<8)-1)/(1<<8);
     xor_gpu<<<dim3(1, blockY), 32>>>(poly, (1<<7)-96, 1<<7, 1<<8, 64);
     xor_gpu<<<dim3(1, blockY), 16>>>(poly, (1<<7)-112, 1<<7, 1<<8, 64, 96);
     xor_gpu<<<dim3(1, blockY), 8>>>(poly, (1<<7)-120, 1<<7, 1<<8, 64, 96, 112);
@@ -603,7 +605,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("9 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[9]);
 
-    blockY = ((1<<logn)-(1<<6))/(1<<7);
+    blockY = ((1<<logn)-(1<<6)+(1<<7)-1)/(1<<7);
     xor_gpu<<<dim3(1, blockY), 12>>>(poly, (1<<6)-60, 1<<6, 1<<7, 48);
     xor_gpu<<<dim3(1, blockY), 3>>>(poly, (1<<6)-63, 1<<6, 1<<7, 48, 60);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<6)-64, 1<<6, 1<<7, 48, 60, 63);
@@ -623,7 +625,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("10 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[10]);
 
-    blockY = ((1<<logn)-(1<<5))/(1<<6);
+    blockY = ((1<<logn)-(1<<5)+(1<<6)-1)/(1<<6);
     xor_gpu<<<dim3(1, blockY), 14>>>(poly, (1<<5)-30, 1<<5, 1<<6, 16);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<5)-31, 1<<5, 1<<6, 16, 30);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<5)-32, 1<<5, 1<<6, 16, 30, 31);
@@ -643,7 +645,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("11 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[11]);
 
-    blockY = ((1<<logn)-(1<<4))/(1<<5);
+    blockY = ((1<<logn)-(1<<4)+(1<<5)-1)/(1<<5);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<4)-16, 1<<4, 1<<5, 15);
     xor_gpu<<<dim3(1, blockY), 15>>>(poly, -15, 1<<4, 1<<5, 15);
 
@@ -657,7 +659,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // printf("12 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[12]);
 
-    blockY = ((1<<logn)-(1<<3))/(1<<4);
+    blockY = ((1<<logn)-(1<<3)+(1<<4)-1)/(1<<4);
     xor_gpu<<<dim3(1, blockY), 2>>>(poly, (1<<3)-6, 1<<3, 1<<4, 4);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<3)-7, 1<<3, 1<<4, 4, 6);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<3)-8, 1<<3, 1<<4, 4, 6, 7);
@@ -665,7 +667,7 @@ void bc_to_lch_256_16(u256* poly, int logn){
     xor_gpu<<<dim3(1, blockY), 2>>>(poly, -6, 1<<3, 1<<4, 6, 7);
     xor_gpu<<<dim3(1, blockY), 1>>>(poly, -7, 1<<3, 1<<4, 7);
 
-    // printf("actual loop count: %d\n", ((1<<logn)-(1<<3))/(1<<(3+1)));
+    // printf("actual loop count: %d\n", ((1<<logn)-(1<<3)+(1<<(3+-1)/(1<<(3+1)));
     // for(int offset=(1<<3);offset<(1<<logn);offset+=(1<<(3+1))) {
     //     for(int i=offset+(1<<3)-1-4;i>=offset+(1<<3)-6;--i)poly[i]^=poly[i+4];
     //     for(int i=offset+(1<<3)-1-6;i>=offset+(1<<3)-7;--i)poly[i]^=poly[i+4]^poly[i+6];
@@ -679,6 +681,10 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // clock_gettime(CLOCK_MONOTONIC, &t[13]);
     // printf("13g : %s\n", cudaGetErrorString(err));
 
+    blockY = ((1<<logn)-(1<<2)+(1<<3)-1)/(1<<3);
+    xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<2)-4, 1<<2, 1<<3, 3);
+    xor_gpu<<<dim3(1, blockY), 3>>>(poly, -3, 1<<2, 1<<3, 3);
+
     // for(int offset=(1<<2);offset<(1<<logn);offset+=(1<<(2+1))){
     //     for(int i=offset+(1<<2)-1-3;i>=offset+(1<<2)-4;--i)poly[i]^=poly[i+3];
     //     for(int i=offset-1-0;i>=offset-3;--i)poly[i]^=poly[i+3];
@@ -686,6 +692,10 @@ void bc_to_lch_256_16(u256* poly, int logn){
     // err = cudaDeviceSynchronize();
     // printf("14 : %s\n", cudaGetErrorString(err));
     // clock_gettime(CLOCK_MONOTONIC, &t[14]);
+
+    blockY = ((1<<logn)-(1<<1)+(1<<2)-1)/(1<<2);
+    xor_gpu<<<dim3(1, blockY), 1>>>(poly, (1<<1)-2, 1<<1, 1<<2, 1);
+    xor_gpu<<<dim3(1, blockY), 1>>>(poly, -1, 1<<1, 1<<2, 1);
 
     // for(int offset=(1<<1);offset<(1<<logn);offset+=(1<<(1+1))){
     //     for(int i=offset+(1<<1)-1-1;i>=offset+(1<<1)-2;--i)poly[i]^=poly[i+1];

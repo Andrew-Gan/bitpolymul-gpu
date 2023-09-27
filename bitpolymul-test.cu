@@ -90,6 +90,8 @@ void test_cuda() {
   if (dev == deviceCount)
     fprintf(stderr, "There is no device supporting CUDA.\n");
   assert(dev < deviceCount);
+
+  cudaFree(0);
 }
 
 int main( int argc , char ** argv )
@@ -173,9 +175,7 @@ bm_init(&bm_ich);
 			printf("diff:"); u64_fdump(stdout,poly5,len*2); puts("");
 		}
 	}
-
-	char dmsg[256];
-	bm_dump( dmsg , 256 , &bm_bc ); printf("benchmark (bc) :\n%s\n", dmsg );
+	
 	return 0; //debug
 
 	for(unsigned q=0;q<len;q++) { poly1[q] = rand(); poly1[q]<<=32; poly1[q] |= rand(); }

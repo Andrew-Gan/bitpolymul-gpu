@@ -272,14 +272,20 @@ bm_start(&bm_tr2);
 bm_stop(&bm_tr2);
 #endif
 
+	uint64_t *b_fx_d;
+	cudaMalloc(&b_fx_d, sizeof(uint64_t)*2*n_terms);
+	cudaMemcpy(b_fx_d, b_fx, sizeof(uint64_t)*2*n_terms, cudaMemcpyHostToDevice);
+
 #ifdef _PROFILE_
 bm_start(&bm_ibc);
 #endif
 	//bc_to_mono_2( b_fx , 2*n_64 );
-	bc_to_mono_2_unit256( b_fx , 2*n_64 );
+	bc_to_mono_2_unit256( b_fx_d , 2*n_64 );
 #ifdef _PROFILE_
 bm_stop(&bm_ibc);
 #endif
+
+	cudaMemcpy(b_fx, b_fx_d, sizeof(uint64_t)*2*n_terms, cudaMemcpyDeviceToHost);
 
 	for(unsigned i=0;i<(2*_n_64);i++) {
 		c[i] = b_fx[i];
@@ -408,13 +414,19 @@ bm_start(&bm_tr2);
 bm_stop(&bm_tr2);
 #endif
 
+	uint64_t *b_fx_d;
+	cudaMalloc(&b_fx_d, sizeof(uint64_t)*n_terms);
+	cudaMemcpy(b_fx_d, b_fx, sizeof(uint64_t)*n_terms, cudaMemcpyHostToDevice);
+
 #ifdef _PROFILE_
 bm_start(&bm_ibc);
 #endif
-	bc_to_mono_2_unit256( b_fx , n_terms );
+	bc_to_mono_2_unit256( b_fx_d , n_terms );
 #ifdef _PROFILE_
 bm_stop(&bm_ibc);
 #endif
+
+	cudaMemcpy(b_fx, b_fx_d, sizeof(uint64_t)*n_terms, cudaMemcpyDeviceToHost);
 
 	for(unsigned i=0;i<(2*_n_64);i++) {
 		c[i] = b_fx[i];
@@ -426,9 +438,3 @@ bm_stop(&bm_ibc);
 	free(b_fx);
 
 }
-
-
-
-
-
-
