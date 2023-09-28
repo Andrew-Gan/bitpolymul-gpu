@@ -5,7 +5,7 @@ LD=    nvcc
 
 CUFLAGS= -O3 -g -G -lcudart -Xcompiler '-funroll-loops -mavx2 -mpclmul -Wextra -Wall'
 CFLAGS= -O3 -funroll-loops -mavx2 -mpclmul -std=gnu99 -Wextra -Wall
-CXXFLAGS= -O3  -mavx2 -mpclmul -fno-exceptions -fno-rtti -nostdinc++ -Wextra -Wall
+CXXFLAGS= -O3 -mavx2 -mpclmul -fno-exceptions -fno-rtti -nostdinc++ -Wextra -Wall
 INCPATH= -I/usr/local/include -I/opt/local/include -I/usr/include #-I../../nist-mq-submission/gf2-dev/
 LDFLAGS= 
 LIBPATH= -L/usr/local/lib -L/opt/local/lib -L/usr/lib #-L../gf2-dev/

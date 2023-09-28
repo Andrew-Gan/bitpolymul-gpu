@@ -91,6 +91,9 @@ __global__
 void xor_gpu(u256* poly, int iBase, int offset, int offsetStride, Arguments... indices) {
     int x = blockIdx.x * blockDim.x + threadIdx.x;
     int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int z = blockIdx.z * blockDim.z + threadIdx.z;
+
+    poly += z * (1<<16);
 
     int currOffs = offset + y * offsetStride;
     int i = iBase + currOffs + x;

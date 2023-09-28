@@ -957,9 +957,6 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	u256 * poly256 = (u256*) poly;
 	unsigned n_256 = n_terms>>2;
 
-	struct timespec start, end;
-	clock_gettime(CLOCK_MONOTONIC, &start);
-
 	// varsub_x256( poly256 , n_256 );
 
 #ifdef BC_CODE_GEN
@@ -970,21 +967,23 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 	//     bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
 	// }
 
-	for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
-		bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));
-	}
+	struct timespec start, end;
+
+	clock_gettime(CLOCK_MONOTONIC, &start);
+	// for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
+	// 	bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));
+	// }
+	bc_to_lch_256_16(poly256, MIN(16,logn));
+	cudaDeviceSynchronize();
+	clock_gettime(CLOCK_MONOTONIC, &end);
+
+	float loopDuration = (end.tv_sec - start.tv_sec) * 1000;
+	loopDuration += (end.tv_nsec - start.tv_nsec) / 1000000.0;
+	printf("Overall: %.2f ms\n", loopDuration);
+
 #else
 	_bc_to_lch_256( poly256 , n_256 , 1 );
 #endif
-
-	cudaError_t err = cudaDeviceSynchronize();
-
-	clock_gettime(CLOCK_MONOTONIC, &end);
-	float duration = (end.tv_sec - start.tv_sec) * 1000000.0f;
-	duration += (end.tv_nsec - start.tv_nsec) / 1000.0f;
-	printf("Duration: %.2f µs\n", duration);
-
-	printf("Error: %s\n", cudaGetErrorString(err));
 }
 
 
