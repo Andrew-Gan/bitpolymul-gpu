@@ -17,11 +17,10 @@ You should have received a copy of the GNU Lesser General Public License
 along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "util.h"
 #include "bc.h"
 
 #include <stdio.h>
-
-#include "util.cuh"
 
 #define BC_CODE_GEN
 
@@ -961,25 +960,17 @@ void bc_to_lch_2_unit256( bc_sto_t * poly , unsigned n_terms )
 
 #ifdef BC_CODE_GEN
 	int logn = LOG2(n_256);
-	// bc_to_lch_256_30_12(poly256,logn);
+	bc_to_lch_256_30_12(poly256,logn);
 
-	// for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
-	//     bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
-	// }
+	for(int i=0;i<(1<<(MAX(0,logn-19)));++i){
+	    bc_to_lch_256_19_17(poly256+i*(1<<19),MIN(19,logn));
+	}
 
-	struct timespec start, end;
-
-	clock_gettime(CLOCK_MONOTONIC, &start);
 	// for(int i=0;i<(1<<(MAX(0,logn-16)));++i){
 	// 	bc_to_lch_256_16(poly256+i*(1<<16), MIN(16,logn));
 	// }
 	bc_to_lch_256_16(poly256, MIN(16,logn));
 	cudaDeviceSynchronize();
-	clock_gettime(CLOCK_MONOTONIC, &end);
-
-	float loopDuration = (end.tv_sec - start.tv_sec) * 1000;
-	loopDuration += (end.tv_nsec - start.tv_nsec) / 1000000.0;
-	printf("Overall: %.2f ms\n", loopDuration);
 
 #else
 	_bc_to_lch_256( poly256 , n_256 , 1 );

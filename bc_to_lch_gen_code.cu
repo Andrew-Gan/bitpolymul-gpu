@@ -17,7 +17,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with BitPolyMul.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "util.cuh"
+#include "util.h"
 
 int blockY = 0;
 cudaStream_t s[16];

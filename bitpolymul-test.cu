@@ -33,7 +33,7 @@ void polymul_gf2x( uint64_t * c , const uint64_t * a , const uint64_t * b , unsi
 //#define bm_func1 bitpolymul_simple
 #define bm_func1 bitpolymul_2_64
 //#define bm_func1 bitpolymul_2
-//#define bm_func1 bitpolymul_128
+// #define bm_func1 bitpolymul_2_128
 //#define bm_func1 bitpolymul
 #define n_fn1 "fn:" TOSTRING(bm_func1) "()"
 
@@ -130,6 +130,9 @@ int main( int argc , char ** argv )
 	uint64_t poly4[LEN*2] __attribute__((aligned(32)));
 #endif
 
+	bitpolymul_2_128( poly5 , poly2 , poly1 , len );
+	return 0;
+
 	benchmark bm1;
 	bm_init(&bm1);
 	benchmark bm2;
@@ -175,8 +178,6 @@ bm_init(&bm_ich);
 			printf("diff:"); u64_fdump(stdout,poly5,len*2); puts("");
 		}
 	}
-	
-	return 0; //debug
 
 	for(unsigned q=0;q<len;q++) { poly1[q] = rand(); poly1[q]<<=32; poly1[q] |= rand(); }
 	for(unsigned q=0;q<len;q++) { poly2[q] = rand(); poly2[q]<<=32; poly2[q] |= rand(); }

@@ -12,7 +12,7 @@ LIBPATH= -L/usr/local/lib -L/opt/local/lib -L/usr/lib #-L../gf2-dev/
 LIBS=    #-lm -lcrypto -lgf2x
 
 
-OBJ= bc.o bitpolymul.o encode.o butterfly_net.o gf2128_cantor_iso.o btfy.o trunc_btfy_tab.o gf264_cantor_iso.o trunc_btfy_tab_64.o
+OBJ= util.o bc.o bitpolymul.o encode.o butterfly_net.o gf2128_cantor_iso.o btfy.o trunc_btfy_tab.o gf264_cantor_iso.o trunc_btfy_tab_64.o
 EXE= bitpolymul-test #bc-test
 
 
@@ -64,7 +64,7 @@ all: $(OBJ) $(EXE)
 	$(LD) $(LDFLAGS) $(LIBPATH) -o $@ $^ $(LIBS)
 
 %.o: %.cu
-	$(CU) -Xcompiler $(CUFLAGS) $(INCPATH) -c $<
+	$(CU) -Xcompiler $(CUFLAGS) $(INCPATH) -dc $<
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(INCPATH) -c $<
